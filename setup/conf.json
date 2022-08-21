@@ -1,0 +1,28 @@
+[
+    {
+        "config": "mqtt",
+        "broker_address": "",
+        "broker_port": "1883",
+        "user": "",
+        "pass": ""
+    },
+
+    {
+        "config": "hardware",
+        "oz_per_second": 2,
+        "tap_1_gpio": 8,
+        "tap_2_gpio": 10
+    },
+
+    {
+        "config": "keg-sizes",
+        "quarter_oz": 672,
+        "sixth_oz": 992
+    }
+]
+
+
+
+
+
+

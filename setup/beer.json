@@ -1,0 +1,30 @@
+[
+
+    {
+        "_id": 1,
+        "beer_name": "Ride the Tide",
+        "active": 1,
+        "keg_oz_capacity": 672,
+        "keg_oz_remaining": 672,
+        "date_tapped": "",
+        "last_pour": "",
+        "beer_topic": "home/kegerator/t1-beer",
+        "keg_cap_topic": "home/kegerator/t1-capacity",
+        "keg_rem_topic": "home/kegerator/t1-remaining",
+        "beers_rem_topic": "home/kegerator/t1-beers"
+    },
+    {
+        "_id": 2,
+        "beer_name": "",
+        "active": 0,
+        "keg_oz_capacity": 0,
+        "keg_oz_remaining": 0,
+        "date_tapped": "",
+        "last_pour": "",
+        "beer_topic": "home/kegerator/t2-beer",
+        "keg_cap_topic": "home/kegerator/t2-capacity",
+        "keg_rem_topic": "home/kegerator/t2-remaining",
+        "beers_rem_topic": "home/kegerator/t2-beers"
+    }
+
+]
