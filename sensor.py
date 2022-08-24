@@ -70,7 +70,13 @@ def calc_beer(t,s):
     # Update the database (beer remaining)
     update_beer = beer_col.update_one({"_id":t},{"$set":{"keg_oz_remaining":beer_remaining}})
     update_time = beer_col.update_one({"_id":t},{"$set":{"last_pour":str(now)}})
-    log_consumption = cons_col.insert({"_id":now},{"tap":t},{"beer":curr_beer_name},{"oz_poured":round(beer_poured,2)})
+
+    # Create a new record for the "consumption" collection
+    consumption_record = {  "_id": now,
+                            "tap": t,
+                            "beer": curr_beer_name,
+                            "oz_poured": round(beer_poured,2) }
+    log_consumption = cons_col.insert_one(consumption_record)
 
     # Update MQTT
     mqtt_publish(t)
@@ -114,6 +120,20 @@ def mqtt_publish(t):
 
 
 
+# Startup LED Routine to indicate system running
+def startup_routine():
+    t = 0
+    while t < 8:
+        GPIO.output(t1_led,GPIO.HIGH)
+        GPIO.output(t2_led,GPIO.HIGH)
+        time.sleep(0.2)
+        GPIO.output(t1_led,GPIO.LOW)
+        GPIO.output(t2_led,GPIO.LOW)
+        time.sleep(0.2)
+        t += 1
+
+
+
 # ========== MAIN ========== #
 if __name__ == '__main__':
     # Database Setup
@@ -128,12 +148,19 @@ if __name__ == '__main__':
     for r in gpio_query:
         t1_gpio = r["tap_1_gpio"]
         t2_gpio = r["tap_2_gpio"]
+        t1_led = r["tap_1_led"]
+        t2_led = r["tap_2_led"]
 
     # GPIO Setup
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(t1_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)
     GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(t1_led,GPIO.OUT)
+    GPIO.setup(t2_led,GPIO.OUT)
+
+    # Run Startup Indication
+    startup_routine()
 
     # Create Event Detection
     GPIO.add_event_detect(t1_gpio, GPIO.BOTH, callback=tap1,bouncetime=300) 

@@ -9,9 +9,11 @@
 
     {
         "config": "hardware",
-        "oz_per_second": 2,
+        "oz_per_second": 0.9897683159753493,
         "tap_1_gpio": 8,
-        "tap_2_gpio": 10
+        "tap_1_led": 3,
+        "tap_2_gpio": 10,
+        "tap_2_led": 5
     },
 
     {
