@@ -71,18 +71,17 @@ def calc_beer(t,s):
 
     # Figure out how much beer remaings in the keg after last pour
     beer_remaining = round((curr_beer_remaining - beer_poured),2)
-    beers = round((beer_remaining/12),0)
-
+    
     # Update the database (beer remaining)
-    update_beer = beer_col.update_one({"_id":t},{"$set":{"keg_oz_remaining":beer_remaining}})
-    update_time = beer_col.update_one({"_id":t},{"$set":{"last_pour":str(now)}})
+    beer_col.update_one({"_id":t},{"$set":{"keg_oz_remaining":beer_remaining}})
+    beer_col.update_one({"_id":t},{"$set":{"last_pour":str(now)}})
 
     # Create a new record for the "consumption" collection
     consumption_record = {  "_id": now,
                             "tap": t,
                             "beer": curr_beer_name,
                             "oz_poured": round(beer_poured,2) }
-    log_consumption = cons_col.insert_one(consumption_record)
+    cons_col.insert_one(consumption_record)
 
     # Update MQTT
     mqtt_publish(t)
@@ -173,7 +172,9 @@ if __name__ == '__main__':
     GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300) 
 
     # Persist Service
-    message = input("")
+    #message = input("")
+    while True:
+        time.sleep(.01)
 
     # Cleanup GPIO
     GPIO.cleanup()
