@@ -112,7 +112,7 @@ def mqtt_publish(t):
     # Connect to MQTT Server
     m_client = mqtt.Client("kegerator")
     m_client.username_pw_set(username=m_user,password=m_pass)
-    m_client.connect(m_server, port=m_port)
+    m_client.connect(m_server)
 
     # Publish Data
     m_client.publish(beer_topic,beer_name)
