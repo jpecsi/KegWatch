@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # ========== LIBRARIES ========== #
 import pymongo
 import time
