@@ -17,13 +17,15 @@ def tap1(channel):
     global t1_end
 
     # If tap opens, start the timer...
-    if GPIO.input(channel) == 1:
-        t1_start = time.perf_counter()
+    if GPIO.input(channel) == 1:  
+        t1_start = time.perf_counter()      # Start the timer
+        GPIO.output(t1_led,GPIO.HIGH)       # Turn on the tap's LED
     
     # If tap closes, stop the timer and calculate the remaining beer!
     if GPIO.input(channel) == 0:
-        t1_end = time.perf_counter()
-        calc_beer(1,(t1_end - t1_start))
+        t1_end = time.perf_counter()        # Stop the timer
+        GPIO.output(t1_led,GPIO.LOW)        # Turn off the tap's LED
+        calc_beer(1,(t1_end - t1_start))    # Calculate the remaining beer
 
 
 
@@ -35,12 +37,14 @@ def tap2(channel):
 
     # If tap opens, start the timer...
     if GPIO.input(channel) == 1:
-        t2_start = time.perf_counter()
+        t2_start = time.perf_counter()      # Start the timer
+        GPIO.output(t2_led,GPIO.HIGH)       # Turn on the tap's LED
     
     # If tap closes, stop the timer and calculate the remaining beer!
     if GPIO.input(channel) == 0:
-        t2_end = time.perf_counter()
-        calc_beer(2,(t2_end - t2_start))
+        t2_end = time.perf_counter()        # Stop the timer
+        GPIO.output(t2_led,GPIO.LOW)        # Turn off the tap's LED
+        calc_beer(2,(t2_end - t2_start))    # Calculate the remaining beer
 
 
 
@@ -123,7 +127,7 @@ def mqtt_publish(t):
 # Startup LED Routine to indicate system running
 def startup_routine():
     t = 0
-    while t < 8:
+    while t < 4:
         GPIO.output(t1_led,GPIO.HIGH)
         GPIO.output(t2_led,GPIO.HIGH)
         time.sleep(0.2)
