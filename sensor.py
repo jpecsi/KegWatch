@@ -174,7 +174,7 @@ if __name__ == '__main__':
     # Persist Service
     #message = input("")
     while True:
-        time.sleep(.01)
+        pass
 
     # Cleanup GPIO
     GPIO.cleanup()
