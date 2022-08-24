@@ -46,7 +46,10 @@ def tap2(channel):
 
 # Calculate Beer Remaining
 def calc_beer(t,s):
-    # Get data from db (how many oz pour per second)
+    # Get current time to report "last pour time"
+    now = datetime.now()
+
+    # Get calibration data from db (how many oz pour per second)
     cal_query = conf_col.find({"config":"hardware"},{})
     for c in cal_query:
         oz_per_sec = c['oz_per_second']
@@ -58,6 +61,7 @@ def calc_beer(t,s):
     beer_query = beer_col.find({"_id":t},{})
     for b in beer_query:
         curr_beer_remaining = b['keg_oz_remaining']
+        curr_beer_name = b['beer_name']
 
     # Figure out how much beer remaings in the keg after last pour
     beer_remaining = round((curr_beer_remaining - beer_poured),2)
@@ -65,14 +69,16 @@ def calc_beer(t,s):
 
     # Update the database (beer remaining)
     update_beer = beer_col.update_one({"_id":t},{"$set":{"keg_oz_remaining":beer_remaining}})
-    update_time = beer_col.update_one({"_id":t},{"$set":{"last_pour":str(datetime.now())}})
+    update_time = beer_col.update_one({"_id":t},{"$set":{"last_pour":str(now)}})
+    log_consumption = cons_col.insert_one({"_id":now},{"tap":t},{"beer":curr_beer_name},{"oz_poured":round(beer_poured,2)})
 
-    # TEMP / TESTING
-    print(f"[Tap " + str(t) + "]: " + str(beer_remaining) + " oz (" + str(beers) + " beers) remaining")
-    report(t)
+    # Update MQTT
+    mqtt_publish(t)
+
+
 
 # Push data to Home Assistant via MQTT
-def report(t):
+def mqtt_publish(t):
     # Load MQTT Configuration
     mqtt_query = conf_col.find({"config":"mqtt"},{})
     for m in mqtt_query:
@@ -96,7 +102,7 @@ def report(t):
     # Connect to MQTT Server
     m_client = mqtt.Client("kegerator")
     m_client.username_pw_set(username=m_user,password=m_pass)
-    m_client.connect(m_server)
+    m_client.connect(m_server, port=m_port)
 
     # Publish Data
     m_client.publish(beer_topic,beer_name)
@@ -107,13 +113,15 @@ def report(t):
 
 
 
+
 # ========== MAIN ========== #
 if __name__ == '__main__':
     # Database Setup
     con = pymongo.MongoClient("mongodb://localhost:27017/") # Connection to MongoDB
-    db = con["kegwatch"]        # Database
-    beer_col = db["beer"]       # Collection: beer
-    conf_col = db["conf"]       # Collection: conf
+    db = con["kegwatch"]            # Database
+    beer_col = db["beer"]           # Collection: beer
+    conf_col = db["conf"]           # Collection: conf
+    cons_col = db["consumption"]    # Collection: consumption
 
     # Load Initial Configs
     gpio_query = conf_col.find({"config":"hardware"},{})
