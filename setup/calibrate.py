@@ -16,11 +16,13 @@ def tap1(channel):
     # If tap opens, start the timer...
     if GPIO.input(channel) == 1:
         t1_start = time.perf_counter()
+        GPIO.output(t1_led,GPIO.LOW)
     
     # If tap closes, stop the timer and calculate the remaining beer!
     if GPIO.input(channel) == 0:
         t1_end = time.perf_counter()
-        
+        GPIO.output(t1_led,GPIO.HIGH)
+
         # Calculate flow rate
         ttp = t1_end-t1_start
         flow = int(oz)/ttp
@@ -30,6 +32,7 @@ def tap1(channel):
         update_conf = conf_col.update_one({"config":"hardware"},{"$set":{"oz_per_second":flow}})
 
         print("\nCalibration Complete! Exiting...")
+        GPIO.output(t1_led,GPIO.LOW)
         exit()
 
 
@@ -42,10 +45,12 @@ def tap2(channel):
     # If tap opens, start the timer...
     if GPIO.input(channel) == 1:
         t2_start = time.perf_counter()
-    
+        GPIO.output(t2_led,GPIO.LOW)
+
     # If tap closes, stop the timer and calculate the remaining beer!
     if GPIO.input(channel) == 0:
         t2_end = time.perf_counter()
+        GPIO.output(t2_led,GPIO.HIGH)
 
         # Calculate flow rate
         ttp = t2_end-t2_start
@@ -56,6 +61,7 @@ def tap2(channel):
         update_conf = conf_col.update_one({"config":"hardware"},{"$set":{"oz_per_second":flow}})
 
         print("\nCalibration Complete! Exiting...")
+        GPIO.output(t2_led,GPIO.LOW)
         exit()
 
 
@@ -73,12 +79,16 @@ if __name__ == '__main__':
     for r in gpio_query:
         t1_gpio = r["tap_1_gpio"]
         t2_gpio = r["tap_2_gpio"]
+        t1_led = r["tap_1_led"]
+        t2_led = r["tap_2_led"]
 
     # GPIO Setup
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(t1_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)
     GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(t1_led,GPIO.OUT)
+    GPIO.setup(t2_led,GPIO.OUT)
 
     # Present Menu
     print("\nKegWatch Calibration\n====================\n")
@@ -88,9 +98,10 @@ if __name__ == '__main__':
     # Create Event Detection
     if selected_tap == "1":
         GPIO.add_event_detect(t1_gpio, GPIO.BOTH, callback=tap1,bouncetime=300) 
+        GPIO.output(t1_led,GPIO.HIGH)
     if selected_tap == "2":
         GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300)
-
+        GPIO.output(t2_led,GPIO.HIGH)
 
     print("\nBegin pouring!")
 
