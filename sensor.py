@@ -70,7 +70,7 @@ def calc_beer(t,s):
     # Update the database (beer remaining)
     update_beer = beer_col.update_one({"_id":t},{"$set":{"keg_oz_remaining":beer_remaining}})
     update_time = beer_col.update_one({"_id":t},{"$set":{"last_pour":str(now)}})
-    log_consumption = cons_col.insert_one({"_id":now},{"tap":t},{"beer":curr_beer_name},{"oz_poured":round(beer_poured,2)})
+    log_consumption = cons_col.insert({"_id":now},{"tap":t},{"beer":curr_beer_name},{"oz_poured":round(beer_poured,2)})
 
     # Update MQTT
     mqtt_publish(t)
