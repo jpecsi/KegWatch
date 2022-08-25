@@ -133,15 +133,14 @@ def mqtt_publish(t):
 
 # Startup LED Routine to indicate system running
 def startup_routine():
-    t = 0
-    while t < 4:
+    for t in range(4):
         GPIO.output(t1_led,GPIO.HIGH)
         GPIO.output(t2_led,GPIO.HIGH)
         time.sleep(0.2)
         GPIO.output(t1_led,GPIO.LOW)
         GPIO.output(t2_led,GPIO.LOW)
         time.sleep(0.2)
-        t += 1
+        
 
 
 
@@ -180,6 +179,3 @@ if __name__ == '__main__':
     # Persist Service
     p_thread = Thread(target=persist)
     p_thread.start()
-
-    # Cleanup GPIO
-    #GPIO.cleanup()
