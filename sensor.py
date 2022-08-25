@@ -182,4 +182,4 @@ if __name__ == '__main__':
     p_thread.start()
 
     # Cleanup GPIO
-    GPIO.cleanup()
+    #GPIO.cleanup()
