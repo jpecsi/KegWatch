@@ -172,9 +172,7 @@ if __name__ == '__main__':
     GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300) 
 
     # Persist Service
-    #message = input("")
-    while True:
-        time.sleep(.001)
+    message = input("")
 
     # Cleanup GPIO
     GPIO.cleanup()
