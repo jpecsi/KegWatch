@@ -6,12 +6,18 @@ import time
 import RPi.GPIO as GPIO 
 from datetime import datetime
 import paho.mqtt.client as mqtt
+from threading import Thread
 
 
 
 
 
 # ========== FUNCTIONS ========== #
+# Dirty, hacky way to keep the sensor code running
+def persist():
+    while True:
+        time.sleep(1)
+
 # Tap 1 Handler
 def tap1(channel):
     # Setup Variables
@@ -172,7 +178,8 @@ if __name__ == '__main__':
     GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300) 
 
     # Persist Service
-    message = input("")
+    p_thread = Thread(target=persist)
+    p_thread.start()
 
     # Cleanup GPIO
     GPIO.cleanup()
