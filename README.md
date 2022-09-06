@@ -3,7 +3,7 @@
 <br>
 
 ## Overview
-KegWatch is a sensor written in Python that estimates beer remaining in a keg based on flow rate. The sensor relies on hardware (reed switches) to know when the taps are physically opened and closed. 
+KegWatch is a sensor written in Python that estimates beer remaining in a keg based on flow rate. The sensor relies on hardware (reed switches) to know when the taps are physically opened and closed. For this to work you will need to place reed switches at the top of of your kegerator behind the tap handles, and install the pairing magnets on the tap handles close enough to register as "closed" when the tap handle is in the closed position and "open" when you pour beer.
 
 <br>
 
