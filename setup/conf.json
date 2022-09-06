@@ -14,12 +14,6 @@
         "tap_1_led": 3,
         "tap_2_gpio": 10,
         "tap_2_led": 5
-    },
-
-    {
-        "config": "keg-sizes",
-        "quarter_oz": 672,
-        "sixth_oz": 992
     }
 ]
 
