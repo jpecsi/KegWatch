@@ -62,7 +62,7 @@ def calc_beer(t,s):
     now = datetime.now()
 
     # Who poured the beer?
-    cup_id = 0
+    cup_id = config.getint("dev","cup_id")
     cup_query = 'SELECT user_id FROM cup_inventory WHERE id=%s'
     db.execute(cup_query,(cup_id,))
     for r in db:
