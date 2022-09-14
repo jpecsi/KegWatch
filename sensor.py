@@ -94,7 +94,7 @@ def calc_beer(t,s):
     
     # Update beer remaining
     config.set(taps[t], 'keg_remaining', str(beer_remaining))
-    with open('setup/settings.conf', 'w') as configfile:
+    with open('/opt/sensor/setup/settings.conf', 'w') as configfile:
         config.write(configfile)
     
     # Log the pour
@@ -155,7 +155,7 @@ if __name__ == '__main__':
     # ===== LOAD CONFIGURATION ===== #
     # Read config and beer files
     config = configparser.ConfigParser()
-    config.read('setup/settings.conf')
+    config.read('/opt/sensor/setup/settings.conf')
 
     # Collection of taps
     taps = {
