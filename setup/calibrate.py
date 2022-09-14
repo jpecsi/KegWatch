@@ -2,7 +2,7 @@
 import pymongo
 import time
 import RPi.GPIO as GPIO 
-
+import configparser
 
 
 
@@ -28,10 +28,13 @@ def tap1(channel):
         flow = int(oz)/ttp
         print("[RESULT] It took " + str(ttp) + " seconds to pour " + str(oz) + " oz. Flow rate is " + str(flow) + " oz/sec")
 
-        # Update database
-        update_conf = conf_col.update_one({"config":"hardware"},{"$set":{"oz_per_second":flow}})
+        # Update config
+        config.set('tap_1', 'flow_rate', str(flow))
+        with open('settings.conf', 'w') as configfile:
+            config.write(configfile)
 
-        print("\nCalibration Complete! Exiting...")
+        # Exit
+        print("\nCalibration Complete!")
         GPIO.output(t1_led,GPIO.LOW)
         exit()
 
@@ -57,38 +60,45 @@ def tap2(channel):
         flow = int(oz)/ttp
         print("[RESULT] It took " + str(ttp) + " seconds to pour " + str(oz) + " oz. Flow rate is " + str(flow) + " oz/sec")
 
-        # Update database
-        update_conf = conf_col.update_one({"config":"hardware"},{"$set":{"oz_per_second":flow}})
+        # Update config
+        config.set('tap_2', 'flow_rate', str(flow))
+        with open('settings.conf', 'w') as configfile:
+            config.write(configfile)
 
+        # Exit
         print("\nCalibration Complete! Exiting...")
         GPIO.output(t2_led,GPIO.LOW)
         exit()
+        
 
 
 
 # ========== MAIN ========== #
 if __name__ == '__main__':
-    # Database Setup
-    con = pymongo.MongoClient("mongodb://localhost:27017/") # Connection to MongoDB
-    db = con["kegwatch"]        # Database
-    beer_col = db["beer"]       # Collection: beer
-    conf_col = db["conf"]       # Collection: conf
 
-    # Load Initial Configs
-    gpio_query = conf_col.find({"config":"hardware"},{})
-    for r in gpio_query:
-        t1_gpio = r["tap_1_gpio"]
-        t2_gpio = r["tap_2_gpio"]
-        t1_led = r["tap_1_led"]
-        t2_led = r["tap_2_led"]
-
-    # GPIO Setup
+    # ===== LOAD CONFIGURATION ===== #
+    # Read config and beer files
+    config = configparser.ConfigParser()
+    config.read('settings.conf')
+    
+    # Hardware Configuration
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BOARD)
-    GPIO.setup(t1_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)
-    GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)
-    GPIO.setup(t1_led,GPIO.OUT)
-    GPIO.setup(t2_led,GPIO.OUT)
+
+    # Tap 1
+    t1_gpio = config.getint("tap_1","switch_gpio")              # Reed switch GPIO pin
+    t1_led = config.getint("tap_1","led_gpio")                  # LED GPIO Pin
+    GPIO.setup(t1_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)        # Configure the switch
+    GPIO.setup(t1_led,GPIO.OUT)                                 # Configure the LED
+    GPIO.add_event_detect(t1_gpio, GPIO.BOTH, callback=tap1,bouncetime=300)    # Handler to listen for switch
+
+    # Tap 2
+    t2_gpio = config.getint("tap_2","switch_gpio")              # Reed switch GPIO pin
+    t2_led = config.getint("tap_2","led_gpio")                  # LED GPIO pin
+    GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)        # Configure the switch
+    GPIO.setup(t2_led,GPIO.OUT)                                 # Configure the LED
+    GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300)    # Handler to listen for switch
+
 
     # Present Menu
     print("\nKegWatch Calibration\n====================\n")
@@ -104,7 +114,6 @@ if __name__ == '__main__':
         GPIO.output(t2_led,GPIO.HIGH)
 
     print("\nBegin pouring!")
-
     run = input() 
 
     # Cleanup GPIO

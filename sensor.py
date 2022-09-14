@@ -7,8 +7,8 @@ import RPi.GPIO as GPIO
 from datetime import datetime
 import paho.mqtt.client as mqtt
 from threading import Thread
-
-
+import configparser
+import mysql.connector
 
 
 
@@ -61,33 +61,45 @@ def calc_beer(t,s):
     # Get current time to report "last pour time"
     now = datetime.now()
 
-    # Get calibration data from db (how many oz pour per second)
-    cal_query = conf_col.find({"config":"hardware"},{})
-    for c in cal_query:
-        oz_per_sec = c['oz_per_second']
+    # Who poured the beer?
+    cup_id = 0
+    cup_query = 'SELECT user_id FROM cup_inventory WHERE id=%s'
+    db.execute(cup_query,(cup_id,))
+    for r in db:
+        uid = r[0]
+
+    consumer_query = 'SELECT first_name,last_name FROM consumers WHERE id=%s'
+    db.execute(consumer_query,(uid,))
+    for u in db:
+        consumer = u[0] + " " + u[1]
+
+
+    # Get current tap data
+    tap = {
+        "beer": config[taps[t]]['beer_name'],
+        "remaining": config.getfloat(taps[t],"keg_remaining"),
+        "flow": config.getfloat(taps[t],"flow_rate"),
+    }
 
     # Figure out how much beer was poured
-    beer_poured = s * oz_per_sec
+    beer_poured = s * tap["flow"]
 
-    # Get data from db (how much beer was in the keg before last pour)
-    beer_query = beer_col.find({"_id":t},{})
-    for b in beer_query:
-        curr_beer_remaining = b['keg_oz_remaining']
-        curr_beer_name = b['beer_name']
+    # Figure out how much beer remains in the keg after last pour
+    beer_remaining = round((tap["remaining"] - beer_poured),2)
 
-    # Figure out how much beer remaings in the keg after last pour
-    beer_remaining = round((curr_beer_remaining - beer_poured),2)
+    # Don't allow remaining to go negative
+    if beer_remaining < 0:
+        beer_remaining = 0
     
-    # Update the database (beer remaining)
-    beer_col.update_one({"_id":t},{"$set":{"keg_oz_remaining":beer_remaining}})
-    beer_col.update_one({"_id":t},{"$set":{"last_pour":str(now)}})
-
-    # Create a new record for the "consumption" collection
-    consumption_record = {  "_id": now,
-                            "tap": t,
-                            "beer": curr_beer_name,
-                            "oz_poured": round(beer_poured,2) }
-    cons_col.insert_one(consumption_record)
+    # Update beer remaining
+    config.set(taps[t], 'keg_remaining', str(beer_remaining))
+    with open('setup/settings.conf', 'w') as configfile:
+        config.write(configfile)
+    
+    # Log the pour
+    beer_log_query = ("INSERT INTO beer_log (time,tap,beer_name,oz_poured,consumer) VALUES (%s,%s,%s,%s,%s)")
+    db.execute(beer_log_query,(now,t,tap["beer"],beer_poured,consumer))
+    db_server.commit()
 
     # Update MQTT
     mqtt_publish(t)
@@ -96,38 +108,30 @@ def calc_beer(t,s):
 
 # Push data to Home Assistant via MQTT
 def mqtt_publish(t):
-    # Load MQTT Configuration
-    mqtt_query = conf_col.find({"config":"mqtt"},{})
-    for m in mqtt_query:
-        m_user = m["user"]
-        m_pass = m["pass"]
-        m_server = m["broker_address"]
-        m_port = m["broker_port"]
-
-    # Load Topic Configuration
-    topic_query = beer_col.find({"_id":t},{})
-    for r in topic_query:
-        beer_topic = r["beer_topic"]
-        keg_cap_topic = r["keg_cap_topic"]
-        keg_rem_topic = r["keg_rem_topic"]
-        beers_rem_topic = r["beers_rem_topic"]
-        beer_name = r["beer_name"]
-        keg_cap = r["keg_oz_capacity"]
-        keg_rem = r["keg_oz_remaining"]
-        beers_rem = round(keg_rem/12,0)
-
     # Connect to MQTT Server
-    m_client = mqtt.Client("kegerator")
-    m_client.username_pw_set(username=m_user,password=m_pass)
-    m_client.connect(m_server)
+    m_client = mqtt.Client(mqtt_settings["client_id"])
+    m_client.username_pw_set(username=mqtt_settings["user"],password=mqtt_settings["pass"])
+    m_client.connect(mqtt_settings["broker"],mqtt_settings["port"])
+
+    # Load data
+    tap = {
+        "beer": config[taps[t]]['beer_name'],
+        "capacity": config.getfloat(taps[t],"keg_capacity"),
+        "remaining": config.getfloat(taps[t],"keg_remaining"),
+        "flow": config.getfloat(taps[t],"flow_rate"),
+    }
+
+    # Convert oz to "beers"
+    beers_rem = round(tap["remaining"]/12,1)
+
+    # Build topic strings
+    root_topic = mqtt_topics["root"] + "/" + config[taps[t]]["mqtt_topic_id"] + "-"
 
     # Publish Data
-    m_client.publish(beer_topic,beer_name)
-    m_client.publish(keg_cap_topic,str(keg_cap))
-    m_client.publish(keg_rem_topic,str(keg_rem))
-    m_client.publish(beers_rem_topic,str(beers_rem))
-
-
+    m_client.publish((root_topic+mqtt_topics["beer_name"]),tap["beer"])
+    m_client.publish((root_topic+mqtt_topics["keg_capacity"]),tap["capacity"])
+    m_client.publish((root_topic+mqtt_topics["keg_remaining"]),tap["remaining"])
+    m_client.publish((root_topic+mqtt_topics["beers_remaining"]),beers_rem)
 
 
 
@@ -146,35 +150,84 @@ def startup_routine():
 
 # ========== MAIN ========== #
 if __name__ == '__main__':
-    # Database Setup
-    con = pymongo.MongoClient("mongodb://localhost:27017/") # Connection to MongoDB
-    db = con["kegwatch"]            # Database
-    beer_col = db["beer"]           # Collection: beer
-    conf_col = db["conf"]           # Collection: conf
-    cons_col = db["consumption"]    # Collection: consumption
 
-    # Load Initial Configs
-    gpio_query = conf_col.find({"config":"hardware"},{})
-    for r in gpio_query:
-        t1_gpio = r["tap_1_gpio"]
-        t2_gpio = r["tap_2_gpio"]
-        t1_led = r["tap_1_led"]
-        t2_led = r["tap_2_led"]
+    # ===== LOAD CONFIGURATION ===== #
+    # Read config and beer files
+    config = configparser.ConfigParser()
+    config.read('setup/settings.conf')
 
-    # GPIO Setup
+    # Collection of taps
+    taps = {
+        1: "tap_1",
+        2: "tap_2"
+    }
+
+
+
+    # === GET REMAINING CONFIG ITEMS === #
+    # Database
+    db_settings = {
+        "host": config['database']['host'],
+        "port": config.getint("database","port"),
+        "user": config['database']['username'],
+        "pass": config['database']['password'],
+        "database": config['database']['db_name']
+    }
+
+
+    # MQTT Broker
+    mqtt_settings = {
+        "broker": config['mqtt_broker']['host'],
+        "port": config.getint("mqtt_broker","port"),
+        "user": config['mqtt_broker']['username'],
+        "pass": config['mqtt_broker']['password'],
+        "client_id": config['mqtt_broker']['client_id'] 
+    }
+
+    # MQTT Topics
+    mqtt_topics = {
+        "root": config['mqtt_topics']["root_topic"],
+        "beer_name": config['mqtt_topics']["beer_topic"],
+        "keg_capacity": config['mqtt_topics']["keg_capacity_topic"],
+        "keg_remaining": config['mqtt_topics']["keg_remain_topic"],
+        "beers_remaining": config['mqtt_topics']["beers_remain_topic"]
+    }
+
+
+
+    # ===== SETUP ===== #
+    # Hardware Configuration
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BOARD)
-    GPIO.setup(t1_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)
-    GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)
-    GPIO.setup(t1_led,GPIO.OUT)
-    GPIO.setup(t2_led,GPIO.OUT)
 
+    # Tap 1
+    t1_gpio = config.getint("tap_1","switch_gpio")              # Reed switch GPIO pin
+    t1_led = config.getint("tap_1","led_gpio")                  # LED GPIO Pin
+    GPIO.setup(t1_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)        # Configure the switch
+    GPIO.setup(t1_led,GPIO.OUT)                                 # Configure the LED
+    GPIO.add_event_detect(t1_gpio, GPIO.BOTH, callback=tap1,bouncetime=300)    # Handler to listen for switch
+
+    # Tap 2
+    t2_gpio = config.getint("tap_2","switch_gpio")              # Reed switch GPIO pin
+    t2_led = config.getint("tap_2","led_gpio")                  # LED GPIO pin
+    GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)        # Configure the switch
+    GPIO.setup(t2_led,GPIO.OUT)                                 # Configure the LED
+    GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300)    # Handler to listen for switch
+
+    # Connect to Database
+    db_server = mysql.connector.connect(
+        host=db_settings["host"],
+        port=db_settings["port"],
+        user=db_settings["user"],
+        password=db_settings["pass"],
+        database=db_settings["database"]
+    )
+
+    # Cursor to execute SQL
+    db = db_server.cursor()
+    
     # Run Startup Indication
     startup_routine()
-
-    # Create Event Detection
-    GPIO.add_event_detect(t1_gpio, GPIO.BOTH, callback=tap1,bouncetime=300) 
-    GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300) 
 
     # Persist Service
     p_thread = Thread(target=persist)
