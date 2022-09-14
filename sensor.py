@@ -79,6 +79,7 @@ def calc_beer(t,s):
         "beer": config[taps[t]]['beer_name'],
         "remaining": config.getfloat(taps[t],"keg_remaining"),
         "flow": config.getfloat(taps[t],"flow_rate"),
+        "tapped": config[taps[t]]['date_tapped']
     }
 
     # Figure out how much beer was poured
@@ -97,8 +98,8 @@ def calc_beer(t,s):
         config.write(configfile)
     
     # Log the pour
-    beer_log_query = ("INSERT INTO beer_log (time,tap,beer_name,oz_poured,consumer) VALUES (%s,%s,%s,%s,%s)")
-    db.execute(beer_log_query,(now,t,tap["beer"],beer_poured,consumer))
+    beer_log_query = ("INSERT INTO beer_log (time,tap,beer_name,oz_poured,consumer,oz_remain,date_tapped) VALUES (%s,%s,%s,%s,%s,%s,%s)")
+    db.execute(beer_log_query,(now,t,tap["beer"],beer_poured,consumer,beer_remaining,tap["tapped"]))
     db_server.commit()
 
     # Update MQTT
