@@ -18,9 +18,10 @@ def persist():
     while True:
         time.sleep(1)
 
+# Console logging for debug purposes
 def log(t,m):
     if config["dev"]["console_logging"] == "enabled":
-        print("(" + str(datetime.now()) + "[Tap " + str(t) + "] " + m)
+        print("(" + str(datetime.now()) + ") [Tap " + str(t) + "] " + m)
 
 # Tap 1 Handler
 def tap1(channel):
@@ -70,18 +71,21 @@ def calc_beer(t,s):
     
     # Who poured the beer?
     cup_id = config.getint("dev","cup_id")
-    log(t,"Getting user from cup ID: " + str(cup_id))
-    cup_query = 'SELECT user_id FROM cup_inventory WHERE id=%s'
-    db.execute(cup_query,(cup_id,))
-    for r in db:
-        uid = r[0]
-    
-    log(t,"User ID is: " + str(uid))
+    if cup_id == 9999:
+        consumer = "Anonymous"
+    else:
+        log(t,"Getting user from cup ID: " + str(cup_id))
+        cup_query = 'SELECT user_id FROM cup_inventory WHERE id=%s'
+        db.execute(cup_query,(cup_id,))
+        for r in db:
+            uid = r[0]
+        
+        log(t,"User ID is: " + str(uid))
 
-    consumer_query = 'SELECT first_name,last_name FROM consumers WHERE id=%s'
-    db.execute(consumer_query,(uid,))
-    for u in db:
-        consumer = u[0] + " " + u[1]
+        consumer_query = 'SELECT first_name,last_name FROM consumers WHERE id=%s'
+        db.execute(consumer_query,(uid,))
+        for u in db:
+            consumer = u[0] + " " + u[1]
 
     log(t,"Consumer is: " + str(consumer))
 
