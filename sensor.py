@@ -193,7 +193,7 @@ if __name__ == '__main__':
         2: "tap_2"
     }
 
-    log("SYSTEM","Configured number of taps: " + str(len(taps)))
+    
 
     # === GET REMAINING CONFIG ITEMS === #
     # Database
@@ -259,7 +259,7 @@ if __name__ == '__main__':
     
     # Log
     log("SYSTEM","Startup completed")
-
+    log("SYSTEM","Configured number of taps: " + str(len(taps)))
     # Run Startup Indication
     startup_routine()
 
