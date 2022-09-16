@@ -25,7 +25,6 @@ def log(t,m):
         query = ("INSERT INTO sensor_log (time,category,event) VALUES (%s,%s,%s)")
         db.execute(query,(dt,t,m))
         db_server.commit()
-        print("(" + str(datetime.now()) + ") [Tap " + str(t) + "] " + m)
 
 # Tap 1 Handler
 def tap1(channel):
