@@ -125,8 +125,8 @@ def calc_beer(t,s):
         # Update beer remaining
         if beer_remaining == 0:
             log_keg(t)
-            config.set(taps[t],'active',0)
-            
+            config.set(taps[t],'active','0')
+
         config.set(taps[t], 'keg_remaining', str(beer_remaining))
         with open('/opt/sensor/setup/settings.conf', 'w') as configfile:
             config.write(configfile)
