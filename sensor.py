@@ -20,7 +20,11 @@ def persist():
 
 # Console logging for debug purposes
 def log(t,m):
-    if config["dev"]["console_logging"] == "enabled":
+    if config["dev"]["logging"] == "enabled":
+        dt = datetime.now()
+        query = ("INSERT INTO sensor_log (time,category,event) VALUES (%s,%s,%s)")
+        db.execute(query,(dt,t,m))
+        db_server.commit()
         print("(" + str(datetime.now()) + ") [Tap " + str(t) + "] " + m)
 
 # Tap 1 Handler
@@ -33,14 +37,15 @@ def tap1(channel):
     if GPIO.input(channel) == 1:  
         t1_start = time.perf_counter()      # Start the timer
         GPIO.output(t1_led,GPIO.HIGH)       # Turn on the tap's LED
-        log(1,"Tap opened")
+        log("TAP 1","Tap opened")
     
     # If tap closes, stop the timer and calculate the remaining beer!
     if GPIO.input(channel) == 0:
         t1_end = time.perf_counter()        # Stop the timer
         GPIO.output(t1_led,GPIO.LOW)        # Turn off the tap's LED
         calc_beer(1,(t1_end - t1_start))    # Calculate the remaining beer
-        log(1,"Tap closed")
+        log("TAP 1","Tap closed")
+        log("TAP 1", "Reported time open: " + str((t1_end-t1_start)))
 
 
 
@@ -54,15 +59,15 @@ def tap2(channel):
     if GPIO.input(channel) == 1:
         t2_start = time.perf_counter()      # Start the timer
         GPIO.output(t2_led,GPIO.HIGH)       # Turn on the tap's LED
-        log(2,"Tap opened")
+        log("TAP 2","Tap opened")
     
     # If tap closes, stop the timer and calculate the remaining beer!
     if GPIO.input(channel) == 0:
         t2_end = time.perf_counter()        # Stop the timer
         GPIO.output(t2_led,GPIO.LOW)        # Turn off the tap's LED
         calc_beer(2,(t2_end - t2_start))    # Calculate the remaining beer
-        log(2,"Tap closed")
-
+        log("TAP 2","Tap closed")
+        log("TAP 2", "Reported time open: " + str((t2_end-t2_start)))
 
 # Calculate Beer Remaining
 def calc_beer(t,s):
@@ -74,20 +79,20 @@ def calc_beer(t,s):
     if cup_id == 9999:
         consumer = "Anonymous"
     else:
-        log(t,"Getting user from cup ID: " + str(cup_id))
+        log(("TAP " + t),"Getting user from cup ID: " + str(cup_id))
         cup_query = 'SELECT user_id FROM cup_inventory WHERE id=%s'
         db.execute(cup_query,(cup_id,))
         for r in db:
             uid = r[0]
         
-        log(t,"User ID is: " + str(uid))
+        log(("TAP " + t),"User ID is: " + str(uid))
 
         consumer_query = 'SELECT first_name,last_name FROM consumers WHERE id=%s'
         db.execute(consumer_query,(uid,))
         for u in db:
             consumer = u[0] + " " + u[1]
 
-    log(t,"Consumer is: " + str(consumer))
+    log(("TAP " + t),"Consumer is: " + str(consumer))
 
     # Get current tap data
     tap = {
@@ -106,20 +111,20 @@ def calc_beer(t,s):
     # Don't allow remaining to go negative
     if beer_remaining < 0:
         beer_remaining = 0
-    log(t,"Beer Poured: " + str(beer_poured) + " | Beer Remaining: " + str(beer_remaining))
+    log(("TAP " + t),"Beer Poured: " + str(beer_poured) + " | Beer Remaining: " + str(beer_remaining))
 
     # Update beer remaining
-    log(t,"Updating settings.conf")
+    log(("TAP " + t),"Updating settings.conf")
     config.set(taps[t], 'keg_remaining', str(beer_remaining))
     with open('/opt/sensor/setup/settings.conf', 'w') as configfile:
         config.write(configfile)
     
     # Log the pour
-    log(t,"Logging pour in the database")
+    log(("TAP " + t),"Logging pour in the database")
     beer_log_query = ("INSERT INTO beer_log (time,tap,beer_name,oz_poured,consumer,oz_remain,date_tapped) VALUES (%s,%s,%s,%s,%s,%s,%s)")
     db.execute(beer_log_query,(now,t,tap["beer"],beer_poured,consumer,beer_remaining,tap["tapped"]))
     db_server.commit()
-
+    log(("TAP " + t), "Committed to database")
     # Update MQTT
     mqtt_publish(t)
 
@@ -147,10 +152,16 @@ def mqtt_publish(t):
     root_topic = mqtt_topics["root"] + "/" + config[taps[t]]["mqtt_topic_id"] + "-"
 
     # Publish Data
-    log(t,"Publishing MQTT data to root topic: " + root_topic)
+    log(("TAP " + t),"Publishing " + str(tap["beer"]) + "to MQTT topic: " + (root_topic+mqtt_topics["beer_name"]))
     m_client.publish((root_topic+mqtt_topics["beer_name"]),tap["beer"])
+
+    log(("TAP " + t),"Publishing " + str(tap["capacity"]) + "to MQTT topic: " + (root_topic+mqtt_topics["keg_capacity"]))
     m_client.publish((root_topic+mqtt_topics["keg_capacity"]),tap["capacity"])
+
+    log(("TAP " + t),"Publishing " + str(tap["remaining"]) + "to MQTT topic: " + (root_topic+mqtt_topics["keg_remaining"]))
     m_client.publish((root_topic+mqtt_topics["keg_remaining"]),tap["remaining"])
+
+    log(("TAP " + t),"Publishing " + str(beers_rem) + "to MQTT topic: " + (root_topic+mqtt_topics["beers_remaining"]))
     m_client.publish((root_topic+mqtt_topics["beers_remaining"]),beers_rem)
 
 
@@ -182,7 +193,7 @@ if __name__ == '__main__':
         2: "tap_2"
     }
 
-
+    log("SYSTEM","Configured number of taps: " + str(len(taps)))
 
     # === GET REMAINING CONFIG ITEMS === #
     # Database
@@ -246,9 +257,14 @@ if __name__ == '__main__':
     # Cursor to execute SQL
     db = db_server.cursor()
     
+    # Log
+    log("SYSTEM","Startup completed")
+
     # Run Startup Indication
     startup_routine()
 
     # Persist Service
+    log("SYSTEM","Starting persistence thread")
     p_thread = Thread(target=persist)
     p_thread.start()
+    log("SYSTEM","Persistence thread started")
