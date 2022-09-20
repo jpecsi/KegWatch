@@ -16,8 +16,18 @@ import mysql.connector
 # ========== FUNCTIONS ========== #
 # Dirty, hacky way to keep the sensor code running
 def persist():
+    #print("[" + str(datetime.now()) + "](SYSTEM) Persistence thread started")
     while True:
         time.sleep(1)
+
+# Thread to read barcode input (continuously)
+def read_scan():
+    #print("[" + str(datetime.now()) + "](SYSTEM) Ready for barcode input")
+    while True:
+        global cuser
+        cuser = input("[" + str(datetime.now()) + "] READY TO SCAN BARCODE ")
+        
+
 
 
 # Tap 1 Handler
@@ -37,6 +47,7 @@ def tap1(channel):
         t1_end = time.perf_counter()        # Stop the timer
         GPIO.output(t1_led,GPIO.LOW)        # Turn off the tap's LED
         calc_beer(1,(t1_end - t1_start))    # Calculate the remaining beer
+        
         
 
 
@@ -59,6 +70,7 @@ def tap2(channel):
         t2_end = time.perf_counter()        # Stop the timer
         GPIO.output(t2_led,GPIO.LOW)        # Turn off the tap's LED
         calc_beer(2,(t2_end - t2_start))    # Calculate the remaining beer
+
 
 # Log the keg once kicked
 def log_keg(t):
@@ -93,24 +105,13 @@ def calc_beer(t,s):
     
     if tap["active"] == 1:
         # Who poured the beer?
-        cup_id = config.getint("dev","cup_id")
-        if cup_id == 9999:
-            consumer = "Anonymous"
-        else:
-            #log(("TAP " + t),"Getting user from cup ID: " + str(cup_id))
-            cup_query = 'SELECT user_id FROM cup_inventory WHERE id=%s'
-            db.execute(cup_query,(cup_id,))
-            for r in db:
-                uid = r[0]
-            
-            
+        global cuser
+        if len(cuser) < 1:
+            cuser = "Anonymous"
+        consumer = cuser
+        cuser = "Anonymous"
 
-            consumer_query = 'SELECT first_name,last_name FROM consumers WHERE id=%s'
-            db.execute(consumer_query,(uid,))
-            for u in db:
-                consumer = u[0] + " " + u[1]
-
-
+        
 
         # Figure out how much beer was poured
         beer_poured = s * tap["flow"]
@@ -269,3 +270,7 @@ if __name__ == '__main__':
     # Persist Service
     p_thread = Thread(target=persist)
     p_thread.start()
+
+    # Thread for barcode input
+    input_thread = Thread(target=scan_barcode)
+    input_thread.start()
