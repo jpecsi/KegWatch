@@ -21,7 +21,7 @@ def persist():
         time.sleep(1)
 
 # Thread to read barcode input (continuously)
-def read_scan():
+def scan_barcode():
     #print("[" + str(datetime.now()) + "](SYSTEM) Ready for barcode input")
     while True:
         global cuser
