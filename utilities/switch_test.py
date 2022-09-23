@@ -63,7 +63,7 @@ if __name__ == '__main__':
     # ===== LOAD CONFIGURATION ===== #
     # Read config and beer files
     config = configparser.ConfigParser()
-    cf = (base_path + "config/settings.conf")
+    cf = (".." + base_path + "config/settings.conf")
     print(cf)
     config.read(cf)
 
