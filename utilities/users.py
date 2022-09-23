@@ -5,6 +5,7 @@ import configparser
 import mysql.connector
 from datetime import datetime
 from prettytable import PrettyTable
+import os
 
 
 
@@ -135,10 +136,15 @@ def register_cup():
 # ========== MAIN ========== #
 if __name__ == '__main__':
 
+    # ===== SET WORKING DIRECTORY ===== #
+    base_path = (os.path.realpath(os.path.dirname(__file__)) + "/")
+    sensor_filename = os.path.basename(__file__)
+
     # ===== LOAD CONFIGURATION ===== #
     # Read config and beer files
     config = configparser.ConfigParser()
-    config.read('settings.conf')
+    cf = (base_path + "config/settings.conf")
+    config.read(cf)
 
     # === DATABASE === #
     # Connect to Database

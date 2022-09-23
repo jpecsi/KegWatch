@@ -1,6 +1,5 @@
 # ========== LIBRARIES ========== #
-import pymongo
-import time
+import time, os
 import RPi.GPIO as GPIO 
 import configparser
 
@@ -25,18 +24,8 @@ def tap1(channel):
 
         # Calculate flow rate
         ttp = t1_end-t1_start
-        flow = int(oz)/ttp
-        print("[RESULT] It took " + str(ttp) + " seconds to pour " + str(oz) + " oz. Flow rate is " + str(flow) + " oz/sec")
-
-        # Update config
-        config.set('tap_1', 'flow_rate', str(flow))
-        with open('settings.conf', 'w') as configfile:
-            config.write(configfile)
-
-        # Exit
-        print("\nCalibration Complete!")
-        GPIO.output(t1_led,GPIO.LOW)
-        exit()
+        calc_flowrate(1,ttp)
+        
 
 
 # Tap 2 Handler
@@ -57,33 +46,59 @@ def tap2(channel):
 
         # Calculate flow rate
         ttp = t2_end-t2_start
-        flow = int(oz)/ttp
-        print("[RESULT] It took " + str(ttp) + " seconds to pour " + str(oz) + " oz. Flow rate is " + str(flow) + " oz/sec")
+        calc_flowrate(2,ttp)
+        
+        
+        
 
-        # Update config
-        config.set('tap_2', 'flow_rate', str(flow))
-        with open('settings.conf', 'w') as configfile:
+def calc_flowrate(t,x):
+    # Calculate flow rate
+    flow = int(oz)/x
+
+    # Get current beer remaining
+    beer_remaining = config.getfloat(taps[t],"keg_remaining")
+    beer_remaining = beer_remaining - oz
+    
+    # Display flow rate & save to config file
+    print("[TAP " + str(t) + "] It took " + str(x) + " seconds to pour " + str(oz) + " oz. Flow rate = " + str(flow) + " oz/sec")
+    config.set(taps[t],'flow_rate',str(flow))
+    config.set(taps[t], 'keg_remaining', str(beer_remaining))
+    with open(cf, 'w') as configfile:
             config.write(configfile)
 
-        # Exit
-        print("\nCalibration Complete! Exiting...")
-        GPIO.output(t2_led,GPIO.LOW)
-        exit()
-        
+    # Cleanup GPIO
+    GPIO.output(t1_led,GPIO.LOW)
+    GPIO.output(t2_led,GPIO.LOW) 
+    GPIO.cleanup()
+
+    # Exit
+    print("[DONE] Calibration complete, exiting...\n\n")
+    exit()
 
 
 
 # ========== MAIN ========== #
 if __name__ == '__main__':
 
+    # ===== SET WORKING DIRECTORY ===== #
+    base_path = (os.path.realpath(os.path.dirname(__file__)) + "/")
+    sensor_filename = os.path.basename(__file__)
+
     # ===== LOAD CONFIGURATION ===== #
     # Read config and beer files
     config = configparser.ConfigParser()
-    config.read('settings.conf')
-    
+    cf = (base_path + "config/settings.conf")
+    config.read(cf)
+
     # Hardware Configuration
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BOARD)
+
+    # Collection of taps
+    taps = {
+        1: "tap_1",
+        2: "tap_2"
+    }
 
     # Tap 1
     t1_gpio = config.getint("tap_1","switch_gpio")              # Reed switch GPIO pin
@@ -101,7 +116,7 @@ if __name__ == '__main__':
 
 
     # Present Menu
-    print("\nKegWatch Calibration\n====================\n")
+    print("\n[KegWatch Calibration]\n======================\n")
     selected_tap = input("Which tap will be used to calibrate (1/2)? ")
     oz = input("How many oz are you pouring? ")
     
@@ -116,5 +131,4 @@ if __name__ == '__main__':
     print("\nBegin pouring!")
     run = input() 
 
-    # Cleanup GPIO
-    GPIO.cleanup()
+  

@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 # ========== LIBRARIES ========== #
-import pymongo
-import time
+import time, os
 import RPi.GPIO as GPIO 
 from datetime import datetime
 from datetime import date
@@ -129,7 +128,7 @@ def calc_beer(t,s):
             config.set(taps[t],'active','0')
 
         config.set(taps[t], 'keg_remaining', str(beer_remaining))
-        with open('/opt/sensor/setup/settings.conf', 'w') as configfile:
+        with open(cf, 'w') as configfile:
             config.write(configfile)
         
         # Log the pour
@@ -189,10 +188,15 @@ def startup_routine():
 # ========== MAIN ========== #
 if __name__ == '__main__':
 
+    # ===== SET WORKING DIRECTORY ===== #
+    base_path = (os.path.realpath(os.path.dirname(__file__)) + "/")
+    sensor_filename = os.path.basename(__file__)
+
     # ===== LOAD CONFIGURATION ===== #
     # Read config and beer files
     config = configparser.ConfigParser()
-    config.read('/opt/sensor/setup/settings.conf')
+    cf = (base_path + "config/settings.conf")
+    config.read(cf)
 
     # Collection of taps
     taps = {
