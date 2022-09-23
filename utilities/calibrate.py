@@ -81,14 +81,13 @@ def calc_flowrate(t,x):
 if __name__ == '__main__':
 
     # ===== SET WORKING DIRECTORY ===== #
-    base_path = (os.path.realpath(os.path.dirname(__file__)) + "/")
-    sensor_filename = os.path.basename(__file__)
+    cf_path = ((os.path.realpath(os.path.dirname(__file__)),'..','config') + "/settings.conf")
 
     # ===== LOAD CONFIGURATION ===== #
     # Read config and beer files
     config = configparser.ConfigParser()
-    cf = ((".." + base_path + "config/settings.conf")
-    config.read(cf)
+    print(cf_path)
+    config.read(cf_path)
 
     # Hardware Configuration
     GPIO.setwarnings(False)

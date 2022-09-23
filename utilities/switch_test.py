@@ -57,15 +57,16 @@ def tap2(channel):
 if __name__ == '__main__':
 
     # ===== SET WORKING DIRECTORY ===== #
-    base_path = (os.path.realpath(os.path.dirname(__file__)) + "/")
-    sensor_filename = os.path.basename(__file__)
+    cf_path = ((os.path.realpath(os.path.dirname(__file__)),'..','config') + "/settings.conf")
+ 
+
+    
 
     # ===== LOAD CONFIGURATION ===== #
     # Read config and beer files
     config = configparser.ConfigParser()
-    cf = (".." + base_path + "config/settings.conf")
-    print(cf)
-    config.read(cf)
+    print(cf_path)
+    config.read(cf_path)
 
     # Collection of taps
     taps = {
