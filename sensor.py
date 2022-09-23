@@ -195,7 +195,6 @@ if __name__ == '__main__':
     # ===== LOAD CONFIGURATION ===== #
     # Read config and beer files
     config = configparser.ConfigParser()
-    print(cf)
     config.read(cf)
 
     # Collection of taps
