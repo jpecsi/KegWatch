@@ -189,13 +189,14 @@ def startup_routine():
 if __name__ == '__main__':
 
     # ===== SET WORKING DIRECTORY ===== #
-    cf_path = (os.path.realpath(os.path.dirname(__file__)) + "/config/settings.conf")
+    cf_path = (os.path.realpath(os.path.dirname(__file__)))
+    cf = cf_path + "/config/settings.conf"
 
     # ===== LOAD CONFIGURATION ===== #
     # Read config and beer files
     config = configparser.ConfigParser()
-    print(cf_path)
-    config.read(cf_path)
+    print(cf)
+    config.read(cf)
 
     # Collection of taps
     taps = {
