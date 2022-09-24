@@ -22,8 +22,9 @@ def persist():
 # Thread to read barcode input (continuously)
 def scan_barcode():
     #print("[" + str(datetime.now()) + "](SYSTEM) Ready for barcode input")
+    global cuser
+    cuser = "Anonymouse"
     while True:
-        global cuser
         cuser = input("[" + str(datetime.now()) + "] READY TO SCAN BARCODE ")
         
 
@@ -122,19 +123,25 @@ def calc_beer(t,s):
         if beer_remaining < 0:
             beer_remaining = 0
 
-        # Update beer remaining
-        if beer_remaining == 0:
-            log_keg(t)
-            config.set(taps[t],'active','0')
 
-        config.set(taps[t], 'keg_remaining', str(beer_remaining))
-        with open(cf, 'w') as configfile:
-            config.write(configfile)
-        
-        # Log the pour
-        beer_log_query = ("INSERT INTO beer_log (time,tap,beer_name,oz_poured,consumer,oz_remain,date_tapped) VALUES (%s,%s,%s,%s,%s,%s,%s)")
-        db.execute(beer_log_query,(now,t,tap["beer"],beer_poured,consumer,beer_remaining,tap["tapped"]))
-        db_server.commit()
+        try:
+            # Log in database
+            beer_log_query = ("INSERT INTO beer_log (time,tap,beer_name,oz_poured,consumer,oz_remain,date_tapped) VALUES (%s,%s,%s,%s,%s,%s,%s)")
+            db.execute(beer_log_query,(now,t,tap["beer"],beer_poured,consumer,beer_remaining,tap["tapped"]))
+            db_server.commit()
+
+            # Update beer remaining
+            if beer_remaining == 0:
+                log_keg(t)
+                config.set(taps[t],'active','0')
+
+            config.set(taps[t], 'keg_remaining', str(beer_remaining))
+            with open(cf, 'w') as configfile:
+                config.write(configfile)
+
+        except Exception as e:
+            print("[" + str(datetime.now()) + "](ERROR) Issue logging last pour - exception:")
+            print(str(e))
 
         # Update MQTT
         mqtt_publish(t)
@@ -146,9 +153,9 @@ def calc_beer(t,s):
 # Push data to Home Assistant via MQTT
 def mqtt_publish(t):
     # Connect to MQTT Server
-    m_client = mqtt.Client(mqtt_settings["client_id"])
-    m_client.username_pw_set(username=mqtt_settings["user"],password=mqtt_settings["pass"])
-    m_client.connect(mqtt_settings["broker"],mqtt_settings["port"])
+    m_client = mqtt.Client(config['mqtt_broker']['client_id'])
+    m_client.username_pw_set(username=config['mqtt_broker']['username'],password=config['mqtt_broker']['password'])
+    m_client.connect(config['mqtt_broker']['host'],config.getint("mqtt_broker","port"))
 
     # Load data
     tap = {
@@ -162,13 +169,13 @@ def mqtt_publish(t):
     beers_rem = round(tap["remaining"]/12,1)
 
     # Build topic strings
-    root_topic = mqtt_topics["root"] + "/" + config[taps[t]]["mqtt_topic_id"] + "-"
+    root_topic = config['mqtt_topics']["root_topic"] + "/" + config[taps[t]]["mqtt_topic_id"] + "-"
 
     # Publish Data
-    m_client.publish((root_topic+mqtt_topics["beer_name"]),tap["beer"])
-    m_client.publish((root_topic+mqtt_topics["keg_capacity"]),tap["capacity"])
-    m_client.publish((root_topic+mqtt_topics["keg_remaining"]),tap["remaining"])
-    m_client.publish((root_topic+mqtt_topics["beers_remaining"]),beers_rem)
+    m_client.publish((root_topic+config['mqtt_topics']["beer_topic"]),tap["beer"])
+    m_client.publish((root_topic+config['mqtt_topics']["keg_capacity_topic"]),tap["capacity"])
+    m_client.publish((root_topic+config['mqtt_topics']["keg_remain_topic"]),tap["remaining"])
+    m_client.publish((root_topic+config['mqtt_topics']["beers_remain_topic"]),beers_rem)
 
 
 
@@ -203,37 +210,6 @@ if __name__ == '__main__':
         2: "tap_2"
     }
 
-    
-
-    # === GET REMAINING CONFIG ITEMS === #
-    # Database
-    db_settings = {
-        "host": config['database']['host'],
-        "port": config.getint("database","port"),
-        "user": config['database']['username'],
-        "pass": config['database']['password'],
-        "database": config['database']['db_name']
-    }
-
-
-    # MQTT Broker
-    mqtt_settings = {
-        "broker": config['mqtt_broker']['host'],
-        "port": config.getint("mqtt_broker","port"),
-        "user": config['mqtt_broker']['username'],
-        "pass": config['mqtt_broker']['password'],
-        "client_id": config['mqtt_broker']['client_id'] 
-    }
-
-    # MQTT Topics
-    mqtt_topics = {
-        "root": config['mqtt_topics']["root_topic"],
-        "beer_name": config['mqtt_topics']["beer_topic"],
-        "keg_capacity": config['mqtt_topics']["keg_capacity_topic"],
-        "keg_remaining": config['mqtt_topics']["keg_remain_topic"],
-        "beers_remaining": config['mqtt_topics']["beers_remain_topic"]
-    }
-
 
 
     # ===== SETUP ===== #
@@ -257,11 +233,11 @@ if __name__ == '__main__':
 
     # Connect to Database
     db_server = mysql.connector.connect(
-        host=db_settings["host"],
-        port=db_settings["port"],
-        user=db_settings["user"],
-        password=db_settings["pass"],
-        database=db_settings["database"]
+        host=config['database']['host'],
+        port=config.getint("database","port"),
+        user=config['database']['username'],
+        password=config['database']['password'],
+        database=config['database']['db_name']
     )
 
     # Cursor to execute SQL
