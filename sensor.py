@@ -23,7 +23,7 @@ def persist():
 def scan_barcode():
     #print("[" + str(datetime.now()) + "](SYSTEM) Ready for barcode input")
     global cuser
-    cuser = "Anonymouse"
+    cuser = "Anonymous"
     while True:
         cuser = input("[" + str(datetime.now()) + "] READY TO SCAN BARCODE ")
         
