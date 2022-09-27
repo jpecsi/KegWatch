@@ -15,18 +15,45 @@ import mysql.connector
 # ========== FUNCTIONS ========== #
 # Dirty, hacky way to keep the sensor code running
 def persist():
-    #print("[" + str(datetime.now()) + "](SYSTEM) Persistence thread started")
     while True:
         time.sleep(1)
 
+
+
 # Thread to read barcode input (continuously)
 def scan_barcode():
-    #print("[" + str(datetime.now()) + "](SYSTEM) Ready for barcode input")
     global cuser
     cuser = "Anonymous"
     while True:
         cuser = input("[" + str(datetime.now()) + "] READY TO SCAN BARCODE ")
-        
+
+
+
+# Write to the database
+def write_to_db(q,v):
+    try:
+        # Connect to Database
+        db_server = mysql.connector.connect(
+            host=config['database']['host'],
+            port=config.getint("database","port"),
+            user=config['database']['username'],
+            password=config['database']['password'],
+            database=config['database']['db_name']
+        )
+
+        # Cursor to execute SQL
+        db = db_server.cursor()
+
+        # Write to the database
+        db.execute(q,v)
+        db_server.commit()
+
+    except Exception as e:
+        print("[" + str(datetime.now()) + "] DATABASE ERROR: " + str(e))
+
+    # Close the connection
+    db.close()
+    db_server.close()
 
 
 
@@ -50,9 +77,6 @@ def tap1(channel):
         
         
 
-
-
-
 # Tap 2 Handler
 def tap2(channel):
     # Setup variables
@@ -72,6 +96,7 @@ def tap2(channel):
         calc_beer(2,(t2_end - t2_start))    # Calculate the remaining beer
 
 
+
 # Log the keg once kicked
 def log_keg(t):
     # Get current tap data
@@ -79,14 +104,16 @@ def log_keg(t):
         "beer": config[taps[t]]['beer_name'],
         "tapped": config[taps[t]]['date_tapped']
     }
+
+    # Calcualte how many days since the keg was tapped
     today = date(datetime.now().year,datetime.now().month,datetime.now().day)
     tapped = tap["tapped"].split("-")
     tapped_date = date(int(tapped[0]),int(tapped[1]),int(tapped[2]))
     delta = today-tapped_date
 
-    query = ("INSERT INTO keg_log (beer_name,date_tapped,date_kicked,days_to_consume) VALUES (%s,%s,%s,%s)")
-    db.execute(query,(tap["beer"],tapped_date,today,delta.days))
-    db_server.commit()
+    # Write to database
+    write_to_db("INSERT INTO keg_log (beer_name,date_tapped,date_kicked,days_to_consume) VALUES (%s,%s,%s,%s)",(tap["beer"],tapped_date,today,delta.days))
+
 
 
 # Calculate Beer Remaining
@@ -103,6 +130,7 @@ def calc_beer(t,s):
         "active": config.getint(taps[t],"active")
     }
     
+    # Make sure the keg isn't already kicked...
     if tap["active"] == 1:
         # Who poured the beer?
         global cuser
@@ -111,43 +139,30 @@ def calc_beer(t,s):
         consumer = cuser
         cuser = "Anonymous"
 
-        
-
-        # Figure out how much beer was poured
+        # Figure out how much beer was poured / remains
         beer_poured = s * tap["flow"]
-
-        # Figure out how much beer remains in the keg after last pour
         beer_remaining = round((tap["remaining"] - beer_poured),2)
 
         # Don't allow remaining to go negative
         if beer_remaining < 0:
             beer_remaining = 0
 
+        # Update beer remaining
+        if beer_remaining == 0:
+            log_keg(t)
+            config.set(taps[t],'active','0')
 
-        try:
-            # Log in database
-            beer_log_query = ("INSERT INTO beer_log (time,tap,beer_name,oz_poured,consumer,oz_remain,date_tapped) VALUES (%s,%s,%s,%s,%s,%s,%s)")
-            db.execute(beer_log_query,(now,t,tap["beer"],beer_poured,consumer,beer_remaining,tap["tapped"]))
-            db_server.commit()
+        # Update settings.conf
+        config.set(taps[t], 'keg_remaining', str(beer_remaining))
+        with open(cf, 'w') as configfile:
+            config.write(configfile)
 
-            # Update beer remaining
-            if beer_remaining == 0:
-                log_keg(t)
-                config.set(taps[t],'active','0')
-
-            config.set(taps[t], 'keg_remaining', str(beer_remaining))
-            with open(cf, 'w') as configfile:
-                config.write(configfile)
-
-        except Exception as e:
-            print("[" + str(datetime.now()) + "](ERROR) Issue logging last pour - exception:")
-            print(str(e))
-
+         # Log in database
+        write_to_db("INSERT INTO beer_log (time,tap,beer_name,oz_poured,consumer,oz_remain,date_tapped) VALUES (%s,%s,%s,%s,%s,%s,%s)",(now,t,tap["beer"],beer_poured,consumer,beer_remaining,tap["tapped"]))
+        
         # Update MQTT
         mqtt_publish(t)
     
-
-
 
 
 # Push data to Home Assistant via MQTT
@@ -195,11 +210,10 @@ def startup_routine():
 # ========== MAIN ========== #
 if __name__ == '__main__':
 
-    # ===== SET WORKING DIRECTORY ===== #
+    # Set working directory
     cf_path = (os.path.realpath(os.path.dirname(__file__)))
     cf = cf_path + "/config/settings.conf"
 
-    # ===== LOAD CONFIGURATION ===== #
     # Read config and beer files
     config = configparser.ConfigParser()
     config.read(cf)
@@ -210,46 +224,31 @@ if __name__ == '__main__':
         2: "tap_2"
     }
 
-
-
-    # ===== SETUP ===== #
     # Hardware Configuration
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BOARD)
 
     # Tap 1
-    t1_gpio = config.getint("tap_1","switch_gpio")              # Reed switch GPIO pin
-    t1_led = config.getint("tap_1","led_gpio")                  # LED GPIO Pin
-    GPIO.setup(t1_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)        # Configure the switch
-    GPIO.setup(t1_led,GPIO.OUT)                                 # Configure the LED
-    GPIO.add_event_detect(t1_gpio, GPIO.BOTH, callback=tap1,bouncetime=300)    # Handler to listen for switch
+    t1_gpio = config.getint("tap_1","switch_gpio")                              # Reed switch GPIO pin
+    t1_led = config.getint("tap_1","led_gpio")                                  # LED GPIO Pin
+    GPIO.setup(t1_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)                        # Configure the switch
+    GPIO.setup(t1_led,GPIO.OUT)                                                 # Configure the LED
+    GPIO.add_event_detect(t1_gpio, GPIO.BOTH, callback=tap1,bouncetime=300)     # Handler to listen for switch
 
     # Tap 2
-    t2_gpio = config.getint("tap_2","switch_gpio")              # Reed switch GPIO pin
-    t2_led = config.getint("tap_2","led_gpio")                  # LED GPIO pin
-    GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)        # Configure the switch
-    GPIO.setup(t2_led,GPIO.OUT)                                 # Configure the LED
-    GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300)    # Handler to listen for switch
-
-    # Connect to Database
-    db_server = mysql.connector.connect(
-        host=config['database']['host'],
-        port=config.getint("database","port"),
-        user=config['database']['username'],
-        password=config['database']['password'],
-        database=config['database']['db_name']
-    )
-
-    # Cursor to execute SQL
-    db = db_server.cursor()
-
-    # Run Startup Indication
-    startup_routine()
+    t2_gpio = config.getint("tap_2","switch_gpio")                              # Reed switch GPIO pin
+    t2_led = config.getint("tap_2","led_gpio")                                  # LED GPIO pin
+    GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)                        # Configure the switch
+    GPIO.setup(t2_led,GPIO.OUT)                                                 # Configure the LED
+    GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300)     # Handler to listen for switch
 
     # Persist Service
     p_thread = Thread(target=persist)
     p_thread.start()
 
     # Thread for barcode input
-    input_thread = Thread(target=scan_barcode)
-    input_thread.start()
+    i_thread = Thread(target=scan_barcode)
+    i_thread.start()
+
+    # Run Startup Indication
+    startup_routine()
