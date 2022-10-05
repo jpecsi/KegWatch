@@ -3,7 +3,7 @@
 # ========== LIBRARIES ========== #
 import configparser, os
 import datetime
-
+import uuid
 
 # ========== MAIN ========== #
 if __name__ == '__main__':
@@ -66,8 +66,11 @@ if __name__ == '__main__':
             # Current date (properly formatted)
             now = '{dt.year}-{dt.month}-{dt.day}'.format(dt = datetime.datetime.now())
 
+            # Generate UUID for keg
+            keg_id = str(uuid.uuid4())
+
             # Update settings.conf
-            config.set(taps[tap_input], 'beer_name', beer_name)
+            config.set(taps[tap_input],'beer_name', beer_name)
             config.set(taps[tap_input],'keg_capacity',str(kegs[keg_input]))
             config.set(taps[tap_input],'keg_remaining',str(kegs[keg_input]))
             config.set(taps[tap_input],'date_tapped',str(now))
