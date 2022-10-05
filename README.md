@@ -43,7 +43,7 @@ The following will need to be installed:
 1. After the pre-reqs have been installed, navigate to __KegWatch/setup__ and modify __settings.conf__ to match your environment
 
 2. Restore the database template to your MySQL server: 
-      `mysql -u [user] -p [database] > setup/kegwatch.sql`
+      `mysql -u [user] -p [database] < config/kegwatch.sql`
       
 3. Make all physical connections (reed switches to GPIO and ground, LED to GPIO and ground with resistor in line)
 
