@@ -243,8 +243,8 @@ if __name__ == '__main__':
     GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300)     # Handler to listen for switch
 
     # Persist Service
-    p_thread = Thread(target=persist)
-    p_thread.start()
+    #p_thread = Thread(target=persist)
+    #p_thread.start()
 
     # Thread for barcode input
     i_thread = Thread(target=scan_barcode)
