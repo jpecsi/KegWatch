@@ -233,40 +233,43 @@ if __name__ == '__main__':
     GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)                      # Configure the switch
     GPIO.setup(t2_led,GPIO.OUT)                                                 # Configure the LED
 
-    # Present Menu
-    print("\n[KegWatch Calibration]\n======================\n")
-    selected_tap = input("Which tap will be used to calibrate (1/2)? ")
-    oz_input = input("How many oz are you pouring? ")
-    oz = float(oz_input)
+    try:
+        # Present Menu
+        print("\n[KegWatch Calibration]\n======================\n")
+        selected_tap = input("Which tap will be used to calibrate (1/2)? ")
+        oz_input = input("How many oz are you pouring? ")
+        oz = float(oz_input)
 
 
-    # Create Event Detection
-    if selected_tap == "1":
-        # Check to see if tap is open before continuing
-        if GPIO.input(t1_gpio) == 1:
-            open_tap = 1
-            print("Tap 1 is Open - Please Close to Continue")
-            while open_tap == 1:
-                if GPIO.input(t1_gpio) == 0:
-                    open_tap = 0
+        # Create Event Detection
+        if selected_tap == "1":
+            # Check to see if tap is open before continuing
+            if GPIO.input(t1_gpio) == 1:
+                open_tap = 1
+                print("Tap 1 is Open - Please Close to Continue")
+                while open_tap == 1:
+                    if GPIO.input(t1_gpio) == 0:
+                        open_tap = 0
 
-        # Add event handler and turn on LED
-        GPIO.add_event_detect(t1_gpio, GPIO.BOTH, callback=tap1,bouncetime=300) 
-        GPIO.output(t1_led,GPIO.HIGH)
-        GPIO.output(t2_led,GPIO.LOW)
+            # Add event handler and turn on LED
+            GPIO.add_event_detect(t1_gpio, GPIO.BOTH, callback=tap1,bouncetime=300) 
+            GPIO.output(t1_led,GPIO.HIGH)
+            GPIO.output(t2_led,GPIO.LOW)
 
-    if selected_tap == "2":
-        # Check to see if tap is open before continuing
-        if GPIO.input(t2_gpio) == 0:
-            open_tap = 1
-            print("Tap 2 is Open - Please Close to Continue")
-            while open_tap == 1:
-                if GPIO.input(t2_gpio) == 1:
-                    open_tap = 0
+        if selected_tap == "2":
+            # Check to see if tap is open before continuing
+            if GPIO.input(t2_gpio) == 0:
+                open_tap = 1
+                print("Tap 2 is Open - Please Close to Continue")
+                while open_tap == 1:
+                    if GPIO.input(t2_gpio) == 1:
+                        open_tap = 0
 
-        # Add event handler and turn on LED
-        GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=500)
-        GPIO.output(t2_led,GPIO.HIGH)
-        GPIO.output(t1_led,GPIO.LOW)
+            # Add event handler and turn on LED
+            GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=500)
+            GPIO.output(t2_led,GPIO.HIGH)
+            GPIO.output(t1_led,GPIO.LOW)
 
-    run = input("[" + str(datetime.now()) + "] BEGIN POURING ON TAP " + str(selected_tap)) 
+        run = input("[" + str(datetime.now()) + "] BEGIN POURING ON TAP " + str(selected_tap)) 
+    except KeyboardInterrupt:
+        print("[" + str(datetime.now()) + "] EXITING")

@@ -112,69 +112,72 @@ if __name__ == '__main__':
     }
 
     # Run (loop)
-    run = 1
-    while run == 1:
-        # Display current beers on tap
-        print(colorize("BOLD","\nKegWatch Keg Manager"))
-        
-        keg_data = read_db("SELECT name,tap,abv,capacity,remaining,status FROM keg_log WHERE status=%s ORDER BY tap ASC",(1,))
-        keg_tbl = PrettyTable(['Tap', 'Beer', 'ABV', 'Capacity', 'Remaining'])
-        if len(keg_data) == 0:
-            print(colorize("RED", "No Active Beers!"))
-        else:
-            print(colorize("PURPLE", "\nActive Kegs"))
-            for keg in keg_data:
-                keg_tbl.add_row([keg[1],keg[0],keg[2],keg[3],keg[4]])
-                taps.update({str(keg[1]): keg[5]})
-            print(keg_tbl)
-
-        # Get input & validate the tap to modify
-        validate = 0
-        while validate == 0:
-            tap_input = input("\nWhich tap would you like to add the keg to? ")
-            if tap_input not in taps:
-                print(colorize("YELLOW", "Invalid tap!"))
-            if int(taps[tap_input]) == 1:
-                print(colorize("YELLOW","Tap Already Active!"))
-            else:
-                validate = 1
-
-        # Get input & validate the keg size
-        validate = 0
-        while validate == 0:
-            keg_input = input("What size is the keg (1/4 or 1/6)? ")
-            if keg_input not in kegs:
-                print("Invalid keg size!")
-            else:
-                validate = 1
-
-        # Get the beer name
-        beer_name = input("What is the name of the beer? ")
-
-        # Get the ABV
-        abv = input("What is the ABV of the beer? ")
-        abv = float(abv)
-
-        # Display user's input and confirm change
-        print("\n\n[TAP " + tap_input + "] " + keg_input + " keg of " + beer_name + "(" + str(abv) + "%)")
-        confirm = input("Confirm Changes (y/n)? ")
-
-        # Input confirmed...
-        if confirm == "y":
-            # Current date (properly formatted)
-            now = '{dt.year}-{dt.month}-{dt.day}'.format(dt = datetime.now())
-
-            # Generate UUID for keg
-            keg_id = str(uuid.uuid4())
-
-            # Add the keg
-            write_to_db("INSERT INTO keg_log (id,name,tap,abv,capacity,remaining,date_tapped,status) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",(keg_id,beer_name,int(tap_input),abv,kegs[keg_input],kegs[keg_input],now,1))
+    try:
+        run = 1
+        while run == 1:
+            # Display current beers on tap
+            print(colorize("BOLD","\nKegWatch Keg Manager"))
             
-            # See if the user needs to add another keg, otherwise exit
-            run_again = input("\nAdd anohter keg (y/n)? ")
-            if run_again == "y":
-                run = 1
+            keg_data = read_db("SELECT name,tap,abv,capacity,remaining,status FROM keg_log WHERE status=%s ORDER BY tap ASC",(1,))
+            keg_tbl = PrettyTable(['Tap', 'Beer', 'ABV', 'Capacity', 'Remaining'])
+            if len(keg_data) == 0:
+                print(colorize("RED", "No Active Beers!"))
             else:
-                run = 0
+                print(colorize("PURPLE", "\nActive Kegs"))
+                for keg in keg_data:
+                    keg_tbl.add_row([keg[1],keg[0],keg[2],keg[3],keg[4]])
+                    taps.update({str(keg[1]): keg[5]})
+                print(keg_tbl)
 
+            # Get input & validate the tap to modify
+            validate = 0
+            while validate == 0:
+                tap_input = input("\nWhich tap would you like to add the keg to? ")
+                if tap_input not in taps:
+                    print(colorize("YELLOW", "Invalid tap!"))
+                if int(taps[tap_input]) == 1:
+                    print(colorize("YELLOW","Tap Already Active!"))
+                else:
+                    validate = 1
+
+            # Get input & validate the keg size
+            validate = 0
+            while validate == 0:
+                keg_input = input("What size is the keg (1/4 or 1/6)? ")
+                if keg_input not in kegs:
+                    print("Invalid keg size!")
+                else:
+                    validate = 1
+
+            # Get the beer name
+            beer_name = input("What is the name of the beer? ")
+
+            # Get the ABV
+            abv = input("What is the ABV of the beer? ")
+            abv = float(abv)
+
+            # Display user's input and confirm change
+            print("\n\n[TAP " + tap_input + "] " + keg_input + " keg of " + beer_name + "(" + str(abv) + "%)")
+            confirm = input("Confirm Changes (y/n)? ")
+
+            # Input confirmed...
+            if confirm == "y":
+                # Current date (properly formatted)
+                now = '{dt.year}-{dt.month}-{dt.day}'.format(dt = datetime.now())
+
+                # Generate UUID for keg
+                keg_id = str(uuid.uuid4())
+
+                # Add the keg
+                write_to_db("INSERT INTO keg_log (id,name,tap,abv,capacity,remaining,date_tapped,status) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",(keg_id,beer_name,int(tap_input),abv,kegs[keg_input],kegs[keg_input],now,1))
+                
+                # See if the user needs to add another keg, otherwise exit
+                run_again = input("\nAdd anohter keg (y/n)? ")
+                if run_again == "y":
+                    run = 1
+                else:
+                    run = 0
+    except KeyboardInterrupt:
+        print("[" + str(datetime.now()) + "] EXITING")
+        exit()
         

@@ -90,21 +90,25 @@ if __name__ == '__main__':
     GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)        # Configure the switch
     GPIO.setup(t2_led,GPIO.OUT)                                 # Configure the LED
     GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300)    # Handler to listen for switch
+    
+    try:
+        # Display starting status
+        print("\n[KegWatch Switch Placement Test]\n================================")
+        print("[SYSTEM] Ready!")
 
-    # Display starting status
-    print("\n[KegWatch Switch Placement Test]\n================================")
-    print("[SYSTEM] Ready!")
+        if GPIO.input(t1_gpio) == 0:
+            t1_stat = "CLOSED"
+        else:
+            t1_stat = "OPEN"
 
-    if GPIO.input(t1_gpio) == 0:
-        t1_stat = "CLOSED"
-    else:
-        t1_stat = "OPEN"
+        if GPIO.input(t2_gpio) == 0:
+            t2_stat = "OPEN"
+        else:
+            t2_stat = "CLOSED"
 
-    if GPIO.input(t2_gpio) == 0:
-        t2_stat = "OPEN"
-    else:
-        t2_stat = "CLOSED"
-
-    print("[TAP 1] Current Status is " + t1_stat)
-    print("[TAP 2] Current Status is " + t2_stat)
-    persist = input()
+        print("[TAP 1] Current Status is " + t1_stat)
+        print("[TAP 2] Current Status is " + t2_stat)
+        persist = input()
+    except KeyboardInterrupt:
+        print("[" + str(datetime.now()) + "] EXITING")
+        exit()

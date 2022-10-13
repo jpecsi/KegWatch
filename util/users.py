@@ -217,5 +217,5 @@ if __name__ == '__main__':
             else:
                 print("Invalid menu selection. Try again!\n")
     except KeyboardInterrupt:
-        print("")
+        print("[" + str(datetime.now()) + "] EXITING")
         exit()

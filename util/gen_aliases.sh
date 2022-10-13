@@ -1,7 +1,7 @@
 #!/bin/bash
 
-echo "alias kw-sensor='/opt/kegwatch/sensor/sensor.py &'" >> ~/.bashrc
-echo "alias kw-sensor-f='/opt/kegwatch/sensor/sensor.py'" >> ~/.bashrc
+echo "alias kw-sensor='sudo /opt/kegwatch/sensor/sensor.py &'" >> ~/.bashrc
+echo "alias kw-sensor-f='sudo /opt/kegwatch/sensor/sensor.py'" >> ~/.bashrc
 echo "alias kw-cal='/opt/kegwatch/sensor/util/calibrate.py'" >> ~/.bashrc
 echo "alias kw-keg='/opt/kegwatch/sensor/util/add_keg.py'" >> ~/.bashrc
 echo "alias kw-swtst='/opt/kegwatch/sensor/util/switch_test.py'" >> ~/.bashrc
