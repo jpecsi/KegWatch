@@ -66,6 +66,7 @@ def scan_barcode():
                 if(data.scancode == 28):
                     # Set the user to the scanned ID, reset the temp/builder string
                     cuser=temp
+                    print("BARCODE: " + cuser)
                     temp=""
 
                     # Catch game-mode barcodes
@@ -219,7 +220,7 @@ def calc_beer(t,s):
             cuser = "Anonymous"
         consumer = cuser
         cuser = "Anonymous"
-
+        print("CONSUMER: " + consumer)
         # Figure out how much beer was poured / remains
         beer_poured = s * tap["flow"]
         beer_remaining = round((tap["remaining"] - beer_poured),2)
