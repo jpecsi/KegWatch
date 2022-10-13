@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 # ========== LIBRARIES ========== #
-from asyncore import write
 import time, os
 import RPi.GPIO as GPIO 
 from datetime import datetime
