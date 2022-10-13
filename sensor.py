@@ -48,13 +48,10 @@ def scan_barcode():
   
     # Run a loop looking for key presses
     for event in dev.read_loop():
-        print("ENTERING READ LOOP")
         if event.type == evdev.ecodes.EV_KEY:
             data = evdev.categorize(event)  # Save the event temporarily to introspect it
             # Only grab "down" presses; identify if lower/uppercase character
-            print("KEY INPUT")
             if data.scancode == 42:  # Down events only
-                print("DOWN KEY")
                 if data.keystate == 1:
                     caps = True
                 if data.keystate == 0:
@@ -69,7 +66,6 @@ def scan_barcode():
                 if(data.scancode == 28):
                     # Set the user to the scanned ID, reset the temp/builder string
                     cuser=temp
-                    print("BARCODE: " + cuser)
                     temp=""
 
                     # Catch game-mode barcodes
@@ -223,7 +219,7 @@ def calc_beer(t,s):
             cuser = "Anonymous"
         consumer = cuser
         cuser = "Anonymous"
-        print("CONSUMER: " + consumer)
+        
         # Figure out how much beer was poured / remains
         beer_poured = s * tap["flow"]
         beer_remaining = round((tap["remaining"] - beer_poured),2)
