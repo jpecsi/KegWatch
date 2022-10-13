@@ -97,13 +97,13 @@ def tap2(channel):
     global t2_end
 
     # If tap opens, start the timer...
-    if GPIO.input(channel) == 1:
+    if GPIO.input(channel) == 0:
         t2_start = time.perf_counter()      # Start the timer
         GPIO.output(t2_led,GPIO.LOW)       # Turn on the tap's LED
         
     
     # If tap closes, stop the timer and calculate the remaining beer!
-    if GPIO.input(channel) == 0:
+    if GPIO.input(channel) == 1:
         t2_end = time.perf_counter()        # Stop the timer
         GPIO.output(t2_led,GPIO.HIGH)        # Turn off the tap's LED
         calc_beer(2,(t2_end - t2_start))    # Calculate the remaining beer
@@ -257,15 +257,15 @@ if __name__ == '__main__':
 
     if selected_tap == "2":
         # Check to see if tap is open before continuing
-        if GPIO.input(t2_gpio) == 1:
+        if GPIO.input(t2_gpio) == 0:
             open_tap = 1
             print("Tap 2 is Open - Please Close to Continue")
             while open_tap == 1:
-                if GPIO.input(t2_gpio) == 0:
+                if GPIO.input(t2_gpio) == 1:
                     open_tap = 0
 
         # Add event handler and turn on LED
-        GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300)
+        GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=500)
         GPIO.output(t2_led,GPIO.HIGH)
         GPIO.output(t1_led,GPIO.LOW)
 
