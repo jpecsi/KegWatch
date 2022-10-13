@@ -36,13 +36,13 @@ def tap2(channel):
     global t2_end
 
     # If tap opens, start the timer...
-    if GPIO.input(channel) == 1:
+    if GPIO.input(channel) == 0:
         t2_start = time.perf_counter()      # Start the timer
         GPIO.output(t2_led,GPIO.HIGH)       # Turn on the tap's LED
         print("[TAP 2] OPEN")
     
     # If tap closes, stop the timer and report the amount of time tap was open
-    if GPIO.input(channel) == 0:
+    if GPIO.input(channel) == 1:
         t2_end = time.perf_counter()        # Stop the timer
         GPIO.output(t2_led,GPIO.LOW)        # Turn off the tap's LED
         time_open = (t2_end - t2_start)     # Figure out how long tap was open
@@ -89,11 +89,21 @@ if __name__ == '__main__':
     t2_led = config.getint("tap_2","led_gpio")                  # LED GPIO pin
     GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)        # Configure the switch
     GPIO.setup(t2_led,GPIO.OUT)                                 # Configure the LED
-    GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300)    # Handler to listen for switch
+    GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=500)    # Handler to listen for switch
 
     # Display starting status
     print("\n[KegWatch Switch Placement Test]\n================================")
     print("[SYSTEM] Ready!")
-    print("[TAP 1] Current Status is " + str(GPIO.input(t1_gpio)))
-    print("[TAP 2] Current Status is " + str(GPIO.input(t2_gpio)))
+
+    if GPIO.input(t1_gpio) == 0:
+        t1_stat = "CLOSED"
+    else:
+        t1_stat = "OPEN"
+
+    if GPIO.input(t1_gpio) == 0:
+        t2_stat = "OPEN"
+    else:
+        t2_stat = "CLOSED"
+    print("[TAP 1] Current Status is " + t1_stat)
+    print("[TAP 2] Current Status is " + t2_stat)
     persist = input()

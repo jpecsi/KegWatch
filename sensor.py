@@ -181,15 +181,15 @@ def tap2(channel):
     global t2_end
 
     # If tap opens, start the timer...
-    if GPIO.input(channel) == 1:
+    if GPIO.input(channel) == 0:
         t2_start = time.perf_counter()      # Start the timer
-        GPIO.output(t2_led,GPIO.HIGH)       # Turn on the tap's LED
+        GPIO.output(t2_led,GPIO.LOW)       # Turn on the tap's LED
         
     
     # If tap closes, stop the timer and calculate the remaining beer!
-    if GPIO.input(channel) == 0:
+    if GPIO.input(channel) == 1:
         t2_end = time.perf_counter()        # Stop the timer
-        GPIO.output(t2_led,GPIO.LOW)        # Turn off the tap's LED
+        GPIO.output(t2_led,GPIO.HIGH)        # Turn off the tap's LED
         calc_beer(2,(t2_end - t2_start))    # Calculate the remaining beer
 
 
@@ -219,7 +219,7 @@ def calc_beer(t,s):
             cuser = "Anonymous"
         consumer = cuser
         cuser = "Anonymous"
-        
+
         # Figure out how much beer was poured / remains
         beer_poured = s * tap["flow"]
         beer_remaining = round((tap["remaining"] - beer_poured),2)
@@ -314,9 +314,9 @@ if __name__ == '__main__':
     # Tap 2
     t2_gpio = config.getint("tap_2","switch_gpio")                              # Reed switch GPIO pin
     t2_led = config.getint("tap_2","led_gpio")                                  # LED GPIO pin
-    GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)                        # Configure the switch
+    GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)                        # Configure the switch
     GPIO.setup(t2_led,GPIO.OUT)                                                 # Configure the LED
-    GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300)     # Handler to listen for switch
+    GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=500)     # Handler to listen for switch
 
     # Grab the barcode scanner
     dev_path = "/dev/input/" + config.get("hardware","barcode_dev")
