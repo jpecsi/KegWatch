@@ -183,13 +183,13 @@ def tap2(channel):
     # If tap opens, start the timer...
     if GPIO.input(channel) == 0:
         t2_start = time.perf_counter()      # Start the timer
-        GPIO.output(t2_led,GPIO.LOW)       # Turn on the tap's LED
+        GPIO.output(t2_led,GPIO.HIGH)       # Turn on the tap's LED
         
     
     # If tap closes, stop the timer and calculate the remaining beer!
     if GPIO.input(channel) == 1:
         t2_end = time.perf_counter()        # Stop the timer
-        GPIO.output(t2_led,GPIO.HIGH)        # Turn off the tap's LED
+        GPIO.output(t2_led,GPIO.LOW)        # Turn off the tap's LED
         calc_beer(2,(t2_end - t2_start))    # Calculate the remaining beer
 
 
