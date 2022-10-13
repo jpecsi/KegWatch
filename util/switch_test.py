@@ -4,7 +4,7 @@
 import time, os
 import RPi.GPIO as GPIO 
 import configparser
-
+from datetime import datetime
 
 # Tap 1 Handler
 def tap1(channel):
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)        # Configure the switch
     GPIO.setup(t2_led,GPIO.OUT)                                 # Configure the LED
     GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300)    # Handler to listen for switch
-    
+
     try:
         # Display starting status
         print("\n[KegWatch Switch Placement Test]\n================================")
@@ -110,5 +110,5 @@ if __name__ == '__main__':
         print("[TAP 2] Current Status is " + t2_stat)
         persist = input()
     except KeyboardInterrupt:
-        print("[" + str(datetime.now()) + "] EXITING")
+        print("\n[" + str(datetime.now()) + "] EXITING")
         exit()

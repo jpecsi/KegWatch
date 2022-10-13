@@ -178,6 +178,6 @@ if __name__ == '__main__':
                 else:
                     run = 0
     except KeyboardInterrupt:
-        print("[" + str(datetime.now()) + "] EXITING")
+        print("\n[" + str(datetime.now()) + "] EXITING")
         exit()
         

@@ -272,4 +272,4 @@ if __name__ == '__main__':
 
         run = input("[" + str(datetime.now()) + "] BEGIN POURING ON TAP " + str(selected_tap)) 
     except KeyboardInterrupt:
-        print("[" + str(datetime.now()) + "] EXITING")
+        print("\n[" + str(datetime.now()) + "] EXITING")
