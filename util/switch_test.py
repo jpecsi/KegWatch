@@ -87,7 +87,7 @@ if __name__ == '__main__':
     # Tap 2
     t2_gpio = config.getint("tap_2","switch_gpio")              # Reed switch GPIO pin
     t2_led = config.getint("tap_2","led_gpio")                  # LED GPIO pin
-    GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)        # Configure the switch
+    GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)        # Configure the switch
     GPIO.setup(t2_led,GPIO.OUT)                                 # Configure the LED
     GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300)    # Handler to listen for switch
 
