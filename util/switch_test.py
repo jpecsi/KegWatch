@@ -89,7 +89,7 @@ if __name__ == '__main__':
     t2_led = config.getint("tap_2","led_gpio")                  # LED GPIO pin
     GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)        # Configure the switch
     GPIO.setup(t2_led,GPIO.OUT)                                 # Configure the LED
-    GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=500)    # Handler to listen for switch
+    GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300)    # Handler to listen for switch
 
     # Display starting status
     print("\n[KegWatch Switch Placement Test]\n================================")
@@ -100,10 +100,11 @@ if __name__ == '__main__':
     else:
         t1_stat = "OPEN"
 
-    if GPIO.input(t1_gpio) == 0:
+    if GPIO.input(t2_gpio) == 0:
         t2_stat = "OPEN"
     else:
         t2_stat = "CLOSED"
+
     print("[TAP 1] Current Status is " + t1_stat)
     print("[TAP 2] Current Status is " + t2_stat)
     persist = input()
