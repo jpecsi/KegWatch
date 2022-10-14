@@ -224,32 +224,35 @@ def calc_beer(t,s):
         beer_poured = s * tap["flow"]
         beer_remaining = round((tap["remaining"] - beer_poured),2)
 
-        # Don't allow remaining to go negative
-        if beer_remaining < 0:
-            beer_remaining = 0
+        if beer_poured > 32:
+            pass
+        else:
+            # Don't allow remaining to go negative
+            if beer_remaining < 0:
+                beer_remaining = 0
 
-        # Update beer remaining
-        if beer_remaining == 0:
-            # Calcualte how many days since the keg was tapped
-            today = date(datetime.now().year,datetime.now().month,datetime.now().day)
-            tapped = tap["date_tapped"].split("-")
-            tapped_date = date(int(tapped[0]),int(tapped[1]),int(tapped[2]))
-            delta = today-tapped_date
+            # Update beer remaining
+            if beer_remaining == 0:
+                # Calcualte how many days since the keg was tapped
+                today = date(datetime.now().year,datetime.now().month,datetime.now().day)
+                tapped = tap["date_tapped"].split("-")
+                tapped_date = date(int(tapped[0]),int(tapped[1]),int(tapped[2]))
+                delta = today-tapped_date
 
-            # Write to database
-            write_to_db("UPDATE keg_log SET remaining=0,date_kicked=%s,days_to_consume=%s,status=0 WHERE id=%s", (today,delta.days,tap["beer_id"]))
+                # Write to database
+                write_to_db("UPDATE keg_log SET remaining=0,date_kicked=%s,days_to_consume=%s,status=0 WHERE id=%s", (today,delta.days,tap["beer_id"]))
 
-         # Log in database
-        write_to_db("INSERT INTO beer_log (time,tap_id,beer_id,beer_name,consumer,oz_poured) VALUES (%s,%s,%s,%s,%s,%s)", (now,t,tap["beer_id"],tap["beer_name"],consumer,beer_poured))
-        write_to_db("UPDATE keg_log SET remaining=%s WHERE id=%s",(beer_remaining,tap["beer_id"]))
+            # Log in database
+            write_to_db("INSERT INTO beer_log (time,tap_id,beer_id,beer_name,consumer,oz_poured) VALUES (%s,%s,%s,%s,%s,%s)", (now,t,tap["beer_id"],tap["beer_name"],consumer,beer_poured))
+            write_to_db("UPDATE keg_log SET remaining=%s WHERE id=%s",(beer_remaining,tap["beer_id"]))
 
-        # If game mode is enabled...
-        if config.getboolean("game_mode", "enabled"):
-            drink_type = ("(Beer) " + tap["beer_name"])
-            game_logic(consumer,drink_type,beer_poured,tap["abv"])
+            # If game mode is enabled...
+            if config.getboolean("game_mode", "enabled"):
+                drink_type = ("(Beer) " + tap["beer_name"])
+                game_logic(consumer,drink_type,beer_poured,tap["abv"])
 
-        # Update MQTT
-        mqtt_publish(tap)
+            # Update MQTT
+            mqtt_publish(tap)
 
     
 
@@ -309,7 +312,7 @@ if __name__ == '__main__':
     t1_led = config.getint("tap_1","led_gpio")                                  # LED GPIO Pin
     GPIO.setup(t1_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)                        # Configure the switch
     GPIO.setup(t1_led,GPIO.OUT)                                                 # Configure the LED
-    GPIO.add_event_detect(t1_gpio, GPIO.BOTH, callback=tap1,bouncetime=300)     # Handler to listen for switch
+    GPIO.add_event_detect(t1_gpio, GPIO.BOTH, callback=tap1,bouncetime=500)     # Handler to listen for switch
 
     # Tap 2
     t2_gpio = config.getint("tap_2","switch_gpio")                              # Reed switch GPIO pin
