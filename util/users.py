@@ -126,7 +126,13 @@ def add_user():
     while valid == 0:
         print("\nYou Entered: " + uname + " (Body Type: " + bodycat + ")")
         if (input("Confirm New User (y/n)? ")) == "y":
-            write_to_db("INSERT INTO consumers (id,body_cat) VALUES (%s,%s)",((uname,int(bodycat))))
+            if bodycat == "0":
+                bodycat = 1.3
+            if bodycat == "1":
+                bodycat = 1
+            if bodycat == "2":
+                bodycat = .7
+            write_to_db("INSERT INTO consumers (id,body_cat) VALUES (%s,%s)",((uname,bodycat)))
             valid = 1
     print("\n")
     list_users()
@@ -164,9 +170,15 @@ def modify_user():
 
     valid = 0
     while valid == 0:
-        print("\nYou Entered: " + uname + (" (Body Category: " + bodycat))
+        print("\nYou Entered: " + choice + (" (Body Category: " + bodycat))
         if (input("Confirm modification (y/n)? ")) == "y":
-            write_to_db("UPDATE consumers SET body_cat=%s WHERE id=%s", (bodycat,uname))
+            if bodycat == "0":
+                bodycat = 1.3
+            if bodycat == "1":
+                bodycat = 1
+            if bodycat == "2":
+                bodycat = .7
+            write_to_db("UPDATE consumers SET body_cat=%s WHERE id=%s", (bodycat,choice))
             valid = 1
     print("\n")
     list_users()
