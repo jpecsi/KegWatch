@@ -16,7 +16,7 @@ def tap1(channel):
     if GPIO.input(channel) == 1:  
         t1_start = time.perf_counter()      # Start the timer
         GPIO.output(t1_led,GPIO.HIGH)       # Turn on the tap's LED
-        print("[TAP 1] OPEN")
+        print("[TAP 1] Open")
       
     
     # If tap closes, stop the timer and report the amount of time tap was open
@@ -24,8 +24,8 @@ def tap1(channel):
         t1_end = time.perf_counter()        # Stop the timer
         GPIO.output(t1_led,GPIO.LOW)        # Turn off the tap's LED
         time_open = (t1_end - t1_start)     # Figure out how long tap was open
-        print("[TAP 1] CLOSED")
-        print("[TAP 1] Open for " + str(time_open) + " seconds")
+        print("[TAP 1] Closed After " + str(time_open) + " seconds")
+
         
     
 
@@ -39,15 +39,15 @@ def tap2(channel):
     if GPIO.input(channel) == 1:
         t2_start = time.perf_counter()      # Start the timer
         GPIO.output(t2_led,GPIO.HIGH)       # Turn on the tap's LED
-        print("[TAP 2] OPEN")
+        print("[TAP 2] Open")
     
     # If tap closes, stop the timer and report the amount of time tap was open
     if GPIO.input(channel) == 0:
         t2_end = time.perf_counter()        # Stop the timer
         GPIO.output(t2_led,GPIO.LOW)        # Turn off the tap's LED
         time_open = (t2_end - t2_start)     # Figure out how long tap was open
-        print("[TAP 2] CLOSED")
-        print("[TAP 2] Open for " + str(time_open) + " seconds")
+        print("[TAP 2] Closed After " + str(time_open) + " seconds")
+
 
 
 
