@@ -312,13 +312,21 @@ if __name__ == '__main__':
     t1_led = config.getint("tap_1","led_gpio")                                  # LED GPIO Pin
     GPIO.setup(t1_gpio,GPIO.IN)                                                 # Configure the switch
     GPIO.setup(t1_led,GPIO.OUT)                                                 # Configure the LED
-    GPIO.add_event_detect(t1_gpio, GPIO.BOTH, callback=tap1,bouncetime=100)     # Handler to listen for switch
 
     # Tap 2
     t2_gpio = config.getint("tap_2","switch_gpio")                              # Reed switch GPIO pin
     t2_led = config.getint("tap_2","led_gpio")                                  # LED GPIO pin
     GPIO.setup(t2_gpio,GPIO.IN)                                                 # Configure the switch
     GPIO.setup(t2_led,GPIO.OUT)                                                 # Configure the LED
+    
+    # Check if taps are open; turn on corresponding LED
+    if GPIO.input(t1_gpio) == 1:
+        GPIO.output(t1_led,GPIO.HIGH)
+    if GPIO.input(t2_gpio) == 1:
+        GPIO.output(t2_led,GPIO.HIGH)
+
+    # Create handlers
+    GPIO.add_event_detect(t1_gpio, GPIO.BOTH, callback=tap1,bouncetime=100)     # Handler to listen for switch
     GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=100)     # Handler to listen for switch
 
     # Grab the barcode scanner
