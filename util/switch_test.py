@@ -36,13 +36,13 @@ def tap2(channel):
     global t2_end
 
     # If tap opens, start the timer...
-    if GPIO.input(channel) == 0:
+    if GPIO.input(channel) == 1:
         t2_start = time.perf_counter()      # Start the timer
         GPIO.output(t2_led,GPIO.HIGH)       # Turn on the tap's LED
         print("[TAP 2] OPEN")
     
     # If tap closes, stop the timer and report the amount of time tap was open
-    if GPIO.input(channel) == 1:
+    if GPIO.input(channel) == 0:
         t2_end = time.perf_counter()        # Stop the timer
         GPIO.output(t2_led,GPIO.LOW)        # Turn off the tap's LED
         time_open = (t2_end - t2_start)     # Figure out how long tap was open
@@ -80,16 +80,16 @@ if __name__ == '__main__':
     # Tap 1
     t1_gpio = config.getint("tap_1","switch_gpio")              # Reed switch GPIO pin
     t1_led = config.getint("tap_1","led_gpio")                  # LED GPIO Pin
-    GPIO.setup(t1_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)        # Configure the switch
+    GPIO.setup(t1_gpio,GPIO.IN)                                 # Configure the switch
     GPIO.setup(t1_led,GPIO.OUT)                                 # Configure the LED
-    GPIO.add_event_detect(t1_gpio, GPIO.BOTH, callback=tap1,bouncetime=300)    # Handler to listen for switch
+    GPIO.add_event_detect(t1_gpio, GPIO.BOTH, callback=tap1,bouncetime=100)    # Handler to listen for switch
 
     # Tap 2
     t2_gpio = config.getint("tap_2","switch_gpio")              # Reed switch GPIO pin
     t2_led = config.getint("tap_2","led_gpio")                  # LED GPIO pin
-    GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)        # Configure the switch
+    GPIO.setup(t2_gpio,GPIO.IN)                                 # Configure the switch
     GPIO.setup(t2_led,GPIO.OUT)                                 # Configure the LED
-    GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=300)    # Handler to listen for switch
+    GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=100)    # Handler to listen for switch
 
     try:
         # Display starting status
@@ -102,9 +102,9 @@ if __name__ == '__main__':
             t1_stat = "OPEN"
 
         if GPIO.input(t2_gpio) == 0:
-            t2_stat = "OPEN"
-        else:
             t2_stat = "CLOSED"
+        else:
+            t2_stat = "OPEN"
 
         print("[TAP 1] Current Status is " + t1_stat)
         print("[TAP 2] Current Status is " + t2_stat)

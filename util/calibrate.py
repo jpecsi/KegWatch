@@ -78,14 +78,14 @@ def tap1(channel):
 
     # If tap opens, start the timer...
     if GPIO.input(channel) == 1:  
-        t1_start = time.perf_counter()      # Start the timer
+        t1_start = time.perf_counter()     # Start the timer
         GPIO.output(t1_led,GPIO.LOW)       # Turn on the tap's LED
       
     
     # If tap closes, stop the timer and calculate the remaining beer!
     if GPIO.input(channel) == 0:
         t1_end = time.perf_counter()        # Stop the timer
-        GPIO.output(t1_led,GPIO.HIGH)        # Turn off the tap's LED
+        GPIO.output(t1_led,GPIO.HIGH)       # Turn off the tap's LED
         calc_beer(1,(t1_end - t1_start))    # Calculate the remaining beer
         
         
@@ -97,15 +97,15 @@ def tap2(channel):
     global t2_end
 
     # If tap opens, start the timer...
-    if GPIO.input(channel) == 0:
+    if GPIO.input(channel) == 1:
         t2_start = time.perf_counter()      # Start the timer
-        GPIO.output(t2_led,GPIO.LOW)       # Turn on the tap's LED
+        GPIO.output(t2_led,GPIO.LOW)        # Turn on the tap's LED
         
     
     # If tap closes, stop the timer and calculate the remaining beer!
-    if GPIO.input(channel) == 1:
+    if GPIO.input(channel) == 0:
         t2_end = time.perf_counter()        # Stop the timer
-        GPIO.output(t2_led,GPIO.HIGH)        # Turn off the tap's LED
+        GPIO.output(t2_led,GPIO.HIGH)       # Turn off the tap's LED
         calc_beer(2,(t2_end - t2_start))    # Calculate the remaining beer
 
 
@@ -224,13 +224,13 @@ if __name__ == '__main__':
     # Tap 1
     t1_gpio = config.getint("tap_1","switch_gpio")                              # Reed switch GPIO pin
     t1_led = config.getint("tap_1","led_gpio")                                  # LED GPIO Pin
-    GPIO.setup(t1_gpio,GPIO.IN,pull_up_down=GPIO.PUD_UP)                        # Configure the switch
+    GPIO.setup(t1_gpio,GPIO.IN)                                                 # Configure the switch
     GPIO.setup(t1_led,GPIO.OUT)                                                 # Configure the LED
 
     # Tap 2
     t2_gpio = config.getint("tap_2","switch_gpio")                              # Reed switch GPIO pin
     t2_led = config.getint("tap_2","led_gpio")                                  # LED GPIO pin
-    GPIO.setup(t2_gpio,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)                      # Configure the switch
+    GPIO.setup(t2_gpio,GPIO.IN)                                                 # Configure the switch
     GPIO.setup(t2_led,GPIO.OUT)                                                 # Configure the LED
 
     try:
@@ -252,21 +252,21 @@ if __name__ == '__main__':
                         open_tap = 0
 
             # Add event handler and turn on LED
-            GPIO.add_event_detect(t1_gpio, GPIO.BOTH, callback=tap1,bouncetime=300) 
+            GPIO.add_event_detect(t1_gpio, GPIO.BOTH, callback=tap1,bouncetime=100) 
             GPIO.output(t1_led,GPIO.HIGH)
             GPIO.output(t2_led,GPIO.LOW)
 
         if selected_tap == "2":
             # Check to see if tap is open before continuing
-            if GPIO.input(t2_gpio) == 0:
+            if GPIO.input(t2_gpio) == 1:
                 open_tap = 1
                 print("Tap 2 is Open - Please Close to Continue")
                 while open_tap == 1:
-                    if GPIO.input(t2_gpio) == 1:
+                    if GPIO.input(t2_gpio) == 0:
                         open_tap = 0
 
             # Add event handler and turn on LED
-            GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=500)
+            GPIO.add_event_detect(t2_gpio, GPIO.BOTH, callback=tap2,bouncetime=100)
             GPIO.output(t2_led,GPIO.HIGH)
             GPIO.output(t1_led,GPIO.LOW)
 
